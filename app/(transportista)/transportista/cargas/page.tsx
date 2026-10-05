@@ -41,8 +41,10 @@ export default async function TransportistasCargasPage({
     }),
     db.carga.findMany({
       where: {
-        transportistaAsignadoId: session.userId,
         estado: "PENDIENTE_PAGO_TRANSPORTISTA",
+        postulaciones: {
+          some: { transportistaId: session.userId, estado: "ACEPTADA", matchConfirmadoEn: null },
+        },
       },
       orderBy: { transportistaPagoDeadline: "asc" },
       select: {

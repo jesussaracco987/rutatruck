@@ -44,14 +44,11 @@ function notificarCargaDisponibleCercana({
 onUnaVez("pago.aprobado.publicacion", notificarCargaDisponibleCercana);
 onUnaVez("carga.publicada", notificarCargaDisponibleCercana);
 
-onUnaVez("postulacion.aceptada", ({ transportistaId, cargaId, titulo, convocatoriaCubierta, deadlineHoras }) => {
+onUnaVez("postulacion.aceptada", ({ transportistaId, cargaId, titulo, convocatoriaCubierta }) => {
   console.log("[listener] postulacion.aceptada recibido", { transportistaId, cargaId });
-  const body =
-    deadlineHoras !== undefined
-      ? `Tenés ${deadlineHoras} horas para pagar la comisión y confirmar el viaje "${titulo}".`
-      : convocatoriaCubierta
-        ? `Sos el transportista asignado para "${titulo}". Iniciá una conversación con la empresa desde la app para coordinar.`
-        : `Fuiste aceptado para "${titulo}". La empresa está coordinando los transportistas restantes.`;
+  const body = convocatoriaCubierta
+    ? `Sos el transportista asignado para "${titulo}". Iniciá una conversación con la empresa desde la app para coordinar.`
+    : `Fuiste aceptado para "${titulo}". La empresa está coordinando los transportistas restantes.`;
 
   after(async () => {
     console.log("[listener] postulacion.aceptada after() ejecutando", { transportistaId });
@@ -66,13 +63,30 @@ onUnaVez("postulacion.aceptada", ({ transportistaId, cargaId, titulo, convocator
   });
 });
 
-onUnaVez("oferta-privada.respondida", ({ empresaId, transportistaId, cargaId, titulo, accion }) => {
+onUnaVez("comision.requerida", ({ cargaId, titulo, transportistaIds, deadlineHoras }) => {
+  after(async () => {
+    await Promise.allSettled(
+      transportistaIds.flatMap((transportistaId) => [
+        sendPushToUser(transportistaId, {
+          title: "¡Fuiste seleccionado!",
+          body: `Tenés ${deadlineHoras} horas para pagar la comisión y confirmar el viaje "${titulo}".`,
+          url: `/transportista/cargas/${cargaId}`,
+        }),
+        notifyTransportista(transportistaId),
+      ]),
+    );
+  });
+});
+
+onUnaVez("oferta-privada.respondida", ({ empresaId, transportistaId, cargaId, titulo, accion, pagoPendiente }) => {
   after(async () => {
     await Promise.allSettled([
       accion === "aceptar"
         ? sendPushToUser(empresaId, {
             title: "¡Oferta aceptada!",
-            body: `El transportista aceptó tu oferta para "${titulo}". Iniciá una conversación desde la app para coordinar.`,
+            body: pagoPendiente
+              ? `El transportista aceptó tu oferta para "${titulo}". El viaje se confirma cuando pague la comisión.`
+              : `El transportista aceptó tu oferta para "${titulo}". Iniciá una conversación desde la app para coordinar.`,
             url: `/empresa/cargas/${cargaId}`,
           })
         : sendPushToUser(empresaId, {

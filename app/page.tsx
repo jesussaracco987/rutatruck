@@ -123,6 +123,12 @@ export default async function LandingPage() {
               Ingresá
             </Link>
           </p>
+
+          <p className="text-center text-xs" style={{ color: "#4B5563" }}>
+            <Link href="/terminos">Términos</Link>
+            {" · "}
+            <Link href="/politica-de-privacidad">Privacidad</Link>
+          </p>
         </div>
       </div>
     </div>

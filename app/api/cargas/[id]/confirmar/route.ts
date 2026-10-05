@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/dal";
 import { db } from "@/lib/db";
 import { isEmpresa } from "@/lib/roles";
+import { registrarEvento } from "@/lib/analytics";
 
 export async function POST(
   _req: NextRequest,
@@ -24,6 +25,7 @@ export async function POST(
     where: { id: cargaId },
     data: { estado: "FINALIZADA", finalizadaEn: new Date() },
   });
+  await registrarEvento("viaje_concretado", { rol: "empresa" });
 
   return NextResponse.json({ ok: true });
 }

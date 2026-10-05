@@ -16,7 +16,7 @@ export default function PoliticaDePrivacidadPage() {
         Política de Privacidad
       </h1>
       <p className="text-sm mb-8" style={{ color: "var(--text-muted)" }}>
-        Última actualización: junio 2026
+        Última actualización: octubre 2026
       </p>
 
       <section className="mb-8">
@@ -32,7 +32,15 @@ export default function PoliticaDePrivacidadPage() {
           <li>Ubicación geográfica en tiempo real (solo para transportistas, con tu consentimiento).</li>
           <li>Información sobre cargas publicadas y postulaciones realizadas.</li>
           <li>Datos de uso de la aplicación (páginas visitadas, acciones realizadas).</li>
+          <li>
+            Cómo llegaste a ClickCargo (por ejemplo, desde un anuncio o un enlace compartido) y
+            la primera página que visitaste.
+          </li>
         </ul>
+        <p className="mt-2" style={{ color: "var(--text-secondary)" }}>
+          Para esto usamos cookies propias, de Google Analytics y del píxel de Meta. Podés bloquearlas o borrarlas
+          desde la configuración de tu navegador.
+        </p>
       </section>
 
       <section className="mb-8">
@@ -61,6 +69,11 @@ export default function PoliticaDePrivacidadPage() {
           </li>
           <li>
             <strong>Mapbox:</strong> para servicios de mapas y geocodificación.
+          </li>
+          <li>
+            <strong>Google Analytics y Meta (Facebook e Instagram):</strong> para medir el uso de la
+            plataforma y el resultado de nuestras campañas. No les enviamos tu nombre, correo ni
+            teléfono.
           </li>
           <li>Autoridades competentes si la ley lo requiere.</li>
         </ul>

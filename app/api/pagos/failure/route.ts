@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { findCargaIdDePostulacion } from "@/lib/repositories/postulacion.repository";
 
 export async function GET(req: NextRequest) {
   const externalReference = req.nextUrl.searchParams.get("external_reference");
@@ -16,11 +17,16 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const matchComision = externalReference.match(/^comision_carga_(\d+)$/);
+    const matchComision = externalReference.match(/^comision_post_(\d+)$/);
     if (matchComision) {
-      const cargaId = parseInt(matchComision[1]);
+      const cargaId = await findCargaIdDePostulacion(parseInt(matchComision[1]));
       return NextResponse.redirect(
-        new URL(`/transportista/cargas/${cargaId}?error=pago_cancelado`, req.nextUrl),
+        new URL(
+          cargaId !== null
+            ? `/transportista/cargas/${cargaId}?error=pago_cancelado`
+            : "/transportista/postulaciones",
+          req.nextUrl,
+        ),
       );
     }
   }

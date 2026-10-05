@@ -1,5 +1,9 @@
 import { db } from "@/lib/db";
 import { esChatVigente, whereChatVigente, labelChatPorVencer, CHAT_RETENCION_FINALIZADA_MS } from "@/lib/chat";
+import { esMatchConfirmado, whereMatchConfirmado } from "@/lib/match";
+
+// El chat se abre recién con el match confirmado (ver lib/match.ts): antes, las
+// partes podrían pasarse el contacto y cerrar el viaje por fuera de la app.
 
 export async function crearMensaje(postulacionId: number, autorId: string, cuerpo: string) {
   return db.mensaje.create({ data: { postulacionId, autorId, cuerpo } });
@@ -63,6 +67,7 @@ export async function findPostulacionParaChat(postulacionId: number, userId: str
     select: {
       id: true,
       estado: true,
+      matchConfirmadoEn: true,
       transportistaId: true,
       transportista: { select: { name: true } },
       carga: {
@@ -82,6 +87,7 @@ export async function findPostulacionParaChat(postulacionId: number, userId: str
   if (!postulacion) return null;
   if (postulacion.estado !== "ACEPTADA") return null;
   if (postulacion.transportistaId !== userId && postulacion.carga.empresaId !== userId) return null;
+  if (!esMatchConfirmado(postulacion)) return null;
   if (!esChatVigente(postulacion.carga)) return null;
   return postulacion;
 }
@@ -129,6 +135,7 @@ export async function findConversaciones(
   const postulaciones = await db.postulacion.findMany({
     where: {
       estado: "ACEPTADA",
+      ...whereMatchConfirmado(),
       ...(role === "empresa"
         ? { carga: { empresaId: userId, ...whereChatVigente() } }
         : { transportistaId: userId, carga: whereChatVigente() }),
@@ -222,6 +229,7 @@ export async function esParteDelHilo(postulacionId: number, userId: string) {
     where: {
       id: postulacionId,
       estado: "ACEPTADA",
+      ...whereMatchConfirmado(),
       carga: whereChatVigente(),
       OR: [{ transportistaId: userId }, { carga: { empresaId: userId } }],
     },

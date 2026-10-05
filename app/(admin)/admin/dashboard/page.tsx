@@ -139,6 +139,7 @@ export default async function AdminDashboard() {
           <ComisionForm
             comisionTipo={comision.comisionTipo}
             comisionValor={comision.comisionValor}
+            comisionSinPresupuesto={comision.comisionSinPresupuesto}
           />
         </div>
 

@@ -12,10 +12,12 @@ import AbrirDisputaTransportistaButton from "./_components/AbrirDisputaTransport
 import PagarComisionButton from "./_components/PagarComisionButton";
 import CountdownTimer from "./_components/CountdownTimer";
 import { AutoRefresh } from "@/app/_components/AutoRefresh";
-import { getComisionConfig, calcularComision, expirarSeleccion } from "@/lib/comision";
+import { getComisionConfig, calcularComisionPostulacion } from "@/lib/comision";
+import { resolverRondaPago } from "@/lib/services/comision.service";
 import RatingChip from "@/app/_components/RatingChip";
 import ResenaForm from "@/app/_components/ResenaForm";
 import { findResenasEscritasEnCarga } from "@/lib/repositories/resena.repository";
+import { esMatchConfirmado } from "@/lib/match";
 
 const TIPO_LABELS: Record<string, string> = {
   granos: "Granos",
@@ -61,24 +63,26 @@ export default async function CargaPublicaPage({
     redirect("/transportista/cargas");
   }
 
-  // Lazy expiration check on page load
+  // Expiración perezosa de la ronda de cobro. Con el plazo vencido
+  // resolverRondaPago siempre saca a la carga de PENDIENTE_PAGO_TRANSPORTISTA,
+  // así que el redirect no puede entrar en loop.
   if (
     carga.estado === "PENDIENTE_PAGO_TRANSPORTISTA" &&
     carga.transportistaPagoDeadline &&
     carga.transportistaPagoDeadline < new Date()
   ) {
-    await expirarSeleccion(cargaId);
+    await resolverRondaPago(cargaId);
     redirect(`/transportista/cargas/${cargaId}`);
   }
 
   const soyAceptado = miPostulacion?.estado === "ACEPTADA";
   const soyAsignado = carga.transportistaAsignadoId === session.userId || soyAceptado;
 
-  // El cobro de comisión va contra el escalar transportistaAsignadoId, así que
-  // el botón de pagar solo se le muestra a ese transportista.
-  const pendePago =
-    carga.estado === "PENDIENTE_PAGO_TRANSPORTISTA" &&
-    carga.transportistaAsignadoId === session.userId;
+  // La comisión es por postulación: cada aceptado paga la suya, y el que ya
+  // pagó espera a que paguen los demás de la convocatoria.
+  const enRondaPago = carga.estado === "PENDIENTE_PAGO_TRANSPORTISTA" && soyAceptado;
+  const pendePago = enRondaPago && !esMatchConfirmado(miPostulacion);
+  const esperandoOtrosPagos = enRondaPago && esMatchConfirmado(miPostulacion);
   const puedeCompletar = soyAsignado && carga.estado === "ASIGNADA";
   const puedeDisputa = soyAsignado && (carga.estado === "ASIGNADA" || carga.estado === "EN_CONFIRMACION");
   const esperandoConfirmacion = soyAsignado && carga.estado === "EN_CONFIRMACION";
@@ -93,7 +97,11 @@ export default async function CargaPublicaPage({
   let montoComision = 0;
   if (pendePago) {
     const config = await getComisionConfig();
-    montoComision = calcularComision(config, carga.presupuesto);
+    montoComision = calcularComisionPostulacion(
+      config,
+      carga.presupuesto,
+      miPostulacion.camionesCubiertos,
+    );
   }
 
   return (
@@ -167,7 +175,18 @@ export default async function CargaPublicaPage({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
             <p className="text-sm font-medium" style={{ color: "var(--primary)" }}>
-              ¡Comisión pagada! El viaje está activado.
+              {carga.estado === "PENDIENTE_PAGO_TRANSPORTISTA"
+                ? "¡Comisión pagada!"
+                : "¡Comisión pagada! El viaje está activado."}
+            </p>
+          </div>
+        )}
+
+        {error === "pago_fuera_de_termino" && (
+          <div className="mb-6 rounded-xl border px-4 py-3" style={{ backgroundColor: "#FEF2F2", borderColor: "#FECACA" }}>
+            <p className="text-sm" style={{ color: "#B91C1C" }}>
+              Tu pago se acreditó, pero el plazo para pagar ya había vencido y perdiste el lugar en la carga.
+              Escribinos desde <Link href="/reporte" className="underline">Reportar un problema</Link> para gestionar la devolución.
             </p>
           </div>
         )}
@@ -194,9 +213,22 @@ export default async function CargaPublicaPage({
               </div>
             </div>
             <p className="text-sm mb-4" style={{ color: "#9CA3AF" }}>
-              Pagá la comisión para activar el viaje. Si no pagás a tiempo, la carga vuelve a estar disponible.
+              Pagá la comisión para activar el viaje. Si no pagás a tiempo, perdés tu lugar en la carga.
+              {miPostulacion && miPostulacion.camionesCubiertos > 1 &&
+                ` La comisión es por camión: cubrís ${miPostulacion.camionesCubiertos}.`}
             </p>
             <PagarComisionButton cargaId={carga.id} montoComision={montoComision} />
+          </div>
+        )}
+
+        {esperandoOtrosPagos && (
+          <div
+            className="rounded-xl border px-4 py-3 mb-6"
+            style={{ backgroundColor: "var(--primary-5)", borderColor: "var(--primary-20)" }}
+          >
+            <p className="text-sm" style={{ color: "#374151" }}>
+              Pagaste tu comisión. El viaje se activa cuando paguen los demás transportistas de la convocatoria.
+            </p>
           </div>
         )}
 
@@ -232,7 +264,7 @@ export default async function CargaPublicaPage({
           </div>
         </div>
 
-        {soyAceptado && miPostulacion && (
+        {soyAceptado && miPostulacion && esMatchConfirmado(miPostulacion) && (
           <Link
             href={`/transportista/conversaciones/${miPostulacion.id}`}
             className="rounded-xl border p-6 mb-6 flex items-center gap-4 transition-colors hover:border-[var(--primary-27)]"

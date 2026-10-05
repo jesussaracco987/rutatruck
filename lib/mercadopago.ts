@@ -11,7 +11,7 @@ function getClient() {
 export async function crearPreferencia(body: PreferenceRequest) {
   if (process.env.USE_PAYMENT_MOCK === "true") {
     const externalRef = body.external_reference ?? "mock";
-    const mockBase = externalRef.startsWith("comision_carga_")
+    const mockBase = externalRef.startsWith("comision_post_")
       ? `${process.env.NEXTAUTH_URL}/transportista/pago-mock`
       : `${process.env.NEXTAUTH_URL}/empresa/pago-mock`;
     return {

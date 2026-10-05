@@ -21,6 +21,7 @@ import BadgeVerificado from "@/app/_components/BadgeVerificado";
 import ResenaForm from "@/app/_components/ResenaForm";
 import { findResenasEscritasEnCarga } from "@/lib/repositories/resena.repository";
 import { DIAS_GRACIA_CANCELADA, DIAS_EN_CONFIRMACION_ABANDONADA } from "@/lib/plazos";
+import { esMatchConfirmado } from "@/lib/match";
 
 const ESTADO_LABELS: Record<string, { label: string; badgeStyle: CSSProperties }> = {
   PENDIENTE_PAGO: { label: "Pago pendiente", badgeStyle: { backgroundColor: "#FEF9C3", color: "#A16207", border: "1px solid #FEF08A" } },
@@ -77,9 +78,6 @@ export default async function CargaDetallePage({
         },
         orderBy: { createdAt: "asc" },
       },
-      transportistaAsignado: {
-        select: { name: true, email: true, phone: true },
-      },
     },
   });
 
@@ -104,17 +102,24 @@ export default async function CargaDetallePage({
   // transportistas, ese campo solo guarda a uno.
   const asignados = carga.postulaciones
     .filter((p) => p.estado === "ACEPTADA")
-    .map((p) => ({
+    .map((p) => {
+      // Contacto y chat se habilitan juntos, recién con el match pago. Es por
+      // transportista: en una convocatoria cada uno paga su comisión.
+      const confirmado = esMatchConfirmado(p);
+      return {
       postulacionId: p.id,
       id: p.transportista.id,
       name: p.transportista.name,
-      email: p.contactoEmail ?? p.transportista.email,
-      phone: p.contactoTelefono ?? p.transportista.phone,
+      confirmado,
+      email: confirmado ? (p.contactoEmail ?? p.transportista.email) : null,
+      phone: confirmado ? (p.contactoTelefono ?? p.transportista.phone) : null,
       camionesCubiertos: p.camionesCubiertos ?? 1,
       emailVerified: p.transportista.emailVerified,
       ratingPromedio: p.transportista.ratingPromedio,
       ratingCantidad: p.transportista.ratingCantidad,
-    }));
+      };
+    });
+  const sinPagar = asignados.filter((t) => !t.confirmado);
 
   const puedeEditar = carga.estado === "ACTIVA";
   const puedeCancelar = carga.estado === "ACTIVA";
@@ -279,16 +284,19 @@ export default async function CargaDetallePage({
           </div>
         </div>
 
-        {esperandoPagoTransportista && carga.transportistaAsignado && carga.transportistaPagoDeadline && (
+        {esperandoPagoTransportista && sinPagar.length > 0 && carga.transportistaPagoDeadline && (
           <div className="mb-6 bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-3">
             <p className="text-sm text-yellow-300 font-medium mb-1">
               Esperando pago de comisión
             </p>
             <p className="text-sm text-yellow-200">
-              <strong>{carga.transportistaAsignado.name}</strong> tiene hasta las{" "}
+              <strong>{sinPagar.map((t) => t.name).join(", ")}</strong>{" "}
+              {sinPagar.length === 1 ? "tiene" : "tienen"} hasta las{" "}
               {carga.transportistaPagoDeadline.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })} del{" "}
               {carga.transportistaPagoDeadline.toLocaleDateString("es-AR")} para pagar la comisión y activar el viaje.
-              Si no paga, la carga vuelve a estar disponible.
+              {sinPagar.length === 1
+                ? " Si no paga, la carga vuelve a estar disponible para que aceptes a otro transportista."
+                : " Los que no paguen quedan afuera y la carga vuelve a estar disponible para que aceptes reemplazos."}
             </p>
           </div>
         )}
@@ -367,15 +375,23 @@ export default async function CargaDetallePage({
                     </span>
                   )}
                 </div>
-                <p className="text-sm mt-0.5" style={{ color: "#374151" }}>{t.email}</p>
-                {t.phone && (
-                  <p className="text-sm" style={{ color: "#374151" }}>{t.phone}</p>
+                {t.confirmado ? (
+                  <>
+                    <p className="text-sm mt-0.5" style={{ color: "#374151" }}>{t.email}</p>
+                    {t.phone && (
+                      <p className="text-sm" style={{ color: "#374151" }}>{t.phone}</p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm mt-0.5" style={{ color: "#6B7280" }}>
+                    Los datos de contacto y el chat se habilitan cuando pague la comisión.
+                  </p>
                 )}
               </div>
             ))}
             {/* Un hilo por transportista: en una convocatoria de varios camiones
                 cada uno tiene su conversación aparte con la empresa. */}
-            {asignados.map((t) => (
+            {asignados.filter((t) => t.confirmado).map((t) => (
               <Link
                 key={t.postulacionId}
                 href={`/empresa/conversaciones/${t.postulacionId}`}
@@ -488,12 +504,11 @@ export default async function CargaDetallePage({
                             </span>
                           )}
                         </div>
-                        <p className="text-sm mt-0.5" style={{ color: "#374151" }}>
-                          {p.contactoEmail ?? p.transportista.email}
-                        </p>
-                        {(p.contactoTelefono ?? p.transportista.phone) && (
-                          <p className="text-sm" style={{ color: "#374151" }}>
-                            {p.contactoTelefono ?? p.transportista.phone}
+                        {/* El contacto de los aceptados se muestra arriba, en
+                            "Transportista asignado", una vez confirmado el viaje. */}
+                        {p.estado === "PENDIENTE" && (
+                          <p className="text-xs mt-0.5" style={{ color: "#6B7280" }}>
+                            Vas a ver sus datos de contacto cuando lo selecciones.
                           </p>
                         )}
                         {p.mensaje && (
