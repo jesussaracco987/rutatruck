@@ -136,6 +136,16 @@ export default function LoginPage() {
               Registrate
             </Link>
           </p>
+
+          <p className="text-xs pt-3" style={{ color: "#4B5563" }}>
+            <Link href="/terminos" className="hover:opacity-80">
+              Términos
+            </Link>
+            {" · "}
+            <Link href="/politica-de-privacidad" className="hover:opacity-80">
+              Privacidad
+            </Link>
+          </p>
         </div>
       </div>
     </div>

@@ -11,7 +11,6 @@ import {
   findCargaAsignadaTransportista,
   marcarEnConfirmacion,
   findCargaActivaConAceptadas,
-  cerrarConvocatoria as cerrarConvocatoriaDb,
   createOfertaPrivada,
   findCargasVencidasSinCompletar,
   marcarRecordatorioCompletarEnviado,
@@ -31,7 +30,10 @@ import {
 } from "@/lib/repositories/carga.repository";
 import { findUserById, findUserContacto, linkPhoneSiFalta } from "@/lib/repositories/user.repository";
 import { emit } from "@/lib/events/bus";
+import { registrarEvento } from "@/lib/analytics";
 import { sendPushToUser } from "@/lib/push";
+import { FREE_TIER } from "@/lib/free-tier";
+import { iniciarRondaPago } from "@/lib/services/comision.service";
 import {
   DIAS_GRACIA_CANCELADA,
   DIAS_ASIGNADA_ABANDONADA,
@@ -73,6 +75,7 @@ export async function publicarCargaFreeTier(
     origenLng: cargaData.origenLng,
     empresaId: cargaData.empresaId,
   });
+  await registrarEvento("carga_publicada");
 
   return { ok: true, cargaId: carga.id };
 }
@@ -149,10 +152,14 @@ export async function responderOfertaPrivada(
     return { ok: false, status: 404, error: "Oferta no encontrada" };
   }
 
+  let pagoPendiente = false;
   if (accion === "rechazar") {
     await rechazarOfertaPrivada(cargaId);
   } else {
-    await aceptarOfertaPrivada(cargaId, transportistaId);
+    // Una oferta privada aceptada es un match más: paga comisión igual que
+    // una convocatoria pública.
+    await aceptarOfertaPrivada(cargaId, transportistaId, FREE_TIER);
+    pagoPendiente = (await iniciarRondaPago(cargaId, carga.titulo)) === "pago_pendiente";
   }
 
   emit("oferta-privada.respondida", {
@@ -161,6 +168,7 @@ export async function responderOfertaPrivada(
     cargaId,
     titulo: carga.titulo,
     accion,
+    pagoPendiente,
   });
   return { ok: true };
 }
@@ -181,6 +189,7 @@ export async function completarViaje(
   await marcarEnConfirmacion(cargaId);
 
   emit("carga.completada", { empresaId: carga.empresaId, cargaId, titulo: carga.titulo });
+  await registrarEvento("viaje_concretado", { rol: "transportista" });
   return { ok: true };
 }
 
@@ -204,14 +213,18 @@ export async function cerrarConvocatoriaCarga(
     };
   }
 
-  const transportistaIds = carga.postulaciones.map((p) => p.transportistaId);
-  await cerrarConvocatoriaDb(cargaId, transportistaIds);
+  // Cerrar con menos camiones que los pedidos no saltea el cobro: los
+  // aceptados que no pagaron entran en la ronda igual que con la
+  // convocatoria cubierta.
+  const ronda = await iniciarRondaPago(cargaId, carga.titulo);
 
-  emit("convocatoria.cerrada", {
-    cargaId,
-    titulo: carga.titulo,
-    transportistaIds,
-  });
+  if (ronda === "asignada") {
+    emit("convocatoria.cerrada", {
+      cargaId,
+      titulo: carga.titulo,
+      transportistaIds: carga.postulaciones.map((p) => p.transportistaId),
+    });
+  }
 
   return { ok: true };
 }

@@ -70,7 +70,7 @@ function filtrarPostulaciones(postulaciones: any[], estado: string) {
   if (!estado) return postulaciones;
   if (estado === "PENDIENTE") return postulaciones.filter((p) => p.estado === "PENDIENTE");
   if (estado === "RECHAZADA") return postulaciones.filter((p) => p.estado === "RECHAZADA");
-  if (estado === "PAGAR") return postulaciones.filter((p) => p.estado === "ACEPTADA" && p.carga.estado === "PENDIENTE_PAGO_TRANSPORTISTA");
+  if (estado === "PAGAR") return postulaciones.filter((p) => p.estado === "ACEPTADA" && p.matchConfirmadoEn === null && p.carga.estado === "PENDIENTE_PAGO_TRANSPORTISTA");
   return postulaciones.filter((p) => p.estado === "ACEPTADA" && p.carga.estado === estado);
 }
 
@@ -185,7 +185,11 @@ export default async function MisPostulacionesPage({
               const esRechazada = p.estado === "RECHAZADA";
               const esPendiente = p.estado === "PENDIENTE";
               const esNueva = esAceptada && !p.vistaTransportista;
-              const cfg = ESTADO_CONFIG[p.carga.estado];
+              // En la ronda de cobro, el que ya pagó su comisión espera a los demás.
+              const cfg =
+                p.carga.estado === "PENDIENTE_PAGO_TRANSPORTISTA" && p.matchConfirmadoEn !== null
+                  ? { ...ESTADO_CONFIG.PENDIENTE_PAGO_TRANSPORTISTA, label: "Comisión pagada" }
+                  : ESTADO_CONFIG[p.carga.estado];
 
               const cardBg = esAceptada && cfg ? cfg.cardBg : "#FFFFFF";
               const cardBorder = esAceptada && cfg ? cfg.cardBorder : "#E2E8E8";

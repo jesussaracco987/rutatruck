@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { use, useActionState, useState } from "react";
 import Link from "next/link";
 import LogoClickCargo from "@/app/_components/LogoClickCargo";
 import PurgeAuthedCache from "@/app/_components/PurgeAuthedCache";
@@ -9,11 +9,17 @@ import { signup } from "@/app/actions/auth";
 import type { FormState } from "@/app/actions/auth";
 import LocationAutocomplete from "@/app/(empresa)/empresa/cargas/nueva/_components/LocationAutocomplete";
 
-export default function RegistroPage() {
+export default function RegistroPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ rol?: string | string[] }>;
+}) {
+  // La home y las landings mandan acá con ?rol=empresa o ?rol=transportista.
+  const { rol } = use(searchParams);
   const [state, action, pending] = useActionState<FormState, FormData>(signup, undefined);
   const [showPassword, setShowPassword] = useState(false);
-  const [esEmpresa, setEsEmpresa] = useState(false);
-  const [esTransportista, setEsTransportista] = useState(false);
+  const [esEmpresa, setEsEmpresa] = useState(rol === "empresa");
+  const [esTransportista, setEsTransportista] = useState(rol === "transportista");
   const [notifZonaLat, setNotifZonaLat] = useState("");
   const [notifZonaLng, setNotifZonaLng] = useState("");
   const [notifRadioKm, setNotifRadioKm] = useState("");
@@ -226,6 +232,27 @@ export default function RegistroPage() {
               )}
             </div>
           </div>
+
+          {/* Links en pestaña nueva: navegar en la misma perdería lo ya cargado. */}
+          <label className="flex items-start gap-3 cursor-pointer select-none pt-1">
+            <input
+              type="checkbox"
+              name="aceptaTerminos"
+              value="on"
+              required
+              className="w-4 h-4 mt-0.5 rounded accent-green-400 cursor-pointer flex-shrink-0"
+            />
+            <span className="text-sm" style={{ color: "#D1D5DB" }}>
+              Acepto los{" "}
+              <Link href="/terminos" target="_blank" className="font-semibold underline" style={{ color: "#4ADE80" }}>
+                Términos y Condiciones
+              </Link>{" "}
+              y la{" "}
+              <Link href="/politica-de-privacidad" target="_blank" className="font-semibold underline" style={{ color: "#4ADE80" }}>
+                Política de Privacidad
+              </Link>
+            </span>
+          </label>
 
           {state?.error && (
             <p className="text-sm text-red-300 bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3">

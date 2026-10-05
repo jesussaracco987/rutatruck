@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import LocationAutocomplete, {
   type LocationSelection,
 } from "@/app/(empresa)/empresa/cargas/nueva/_components/LocationAutocomplete";
@@ -242,6 +243,20 @@ export default function CuentaForm({
       >
         {pending ? "Guardando..." : saved ? "✓ Guardado" : "Guardar cambios"}
       </button>
+
+      <p className="text-xs text-center" style={{ color: "#6B7280" }}>
+        <Link href="/terminos" className="underline">
+          Términos
+        </Link>
+        {" · "}
+        <Link href="/politica-de-privacidad" className="underline">
+          Privacidad
+        </Link>
+        {" · "}
+        <Link href="/eliminar-cuenta" className="underline">
+          Eliminar cuenta
+        </Link>
+      </p>
     </div>
   );
 }

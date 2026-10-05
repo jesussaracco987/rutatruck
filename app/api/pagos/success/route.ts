@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { confirmarPagoPublicacion, confirmarPagoComision } from "@/lib/services/pago.service";
+import { registrarEvento } from "@/lib/analytics";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
@@ -21,21 +22,28 @@ export async function GET(req: NextRequest) {
     if (!result.ok) {
       return NextResponse.redirect(new URL("/empresa/cargas?error=pago", req.nextUrl));
     }
+    await registrarEvento("carga_publicada");
     return NextResponse.redirect(new URL("/empresa/cargas?success=1", req.nextUrl));
   }
 
-  // Comisión transportista: "comision_carga_{cargaId}"
-  const matchComision = externalReference.match(/^comision_carga_(\d+)$/);
+  // Comisión transportista: "comision_post_{postulacionId}"
+  const matchComision = externalReference.match(/^comision_post_(\d+)$/);
   if (matchComision) {
-    const cargaId = parseInt(matchComision[1]);
-    const result = await confirmarPagoComision(cargaId, paymentId ?? null);
+    const result = await confirmarPagoComision(parseInt(matchComision[1]), paymentId ?? null);
     if (!result.ok) {
       return NextResponse.redirect(
-        new URL(`/transportista/cargas/${cargaId}?error=pago_cancelado`, req.nextUrl),
+        new URL(
+          // Con carga: el pago se acreditó pero la postulación ya había quedado
+          // afuera por vencimiento del plazo.
+          result.cargaId !== null
+            ? `/transportista/cargas/${result.cargaId}?error=pago_fuera_de_termino`
+            : "/transportista/postulaciones",
+          req.nextUrl,
+        ),
       );
     }
     return NextResponse.redirect(
-      new URL(`/transportista/cargas?pago=1`, req.nextUrl),
+      new URL(`/transportista/cargas/${result.cargaId}?pago=1`, req.nextUrl),
     );
   }
 

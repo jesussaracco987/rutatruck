@@ -19,6 +19,15 @@ model User {
   notifZonaLat      Float?
   notifZonaLng      Float?
   notifRadioKm      Int?
+  /// Canal por el que llegó antes de registrarse (ver lib/origen.ts).
+  origenFuente      String?
+  origenMedio       String?
+  origenCampania    String?
+  origenContenido   String?
+  origenLanding     String?
+  origenReferrer    String?
+  /// Aceptación de Términos y Política de Privacidad en el registro.
+  terminosAceptadosEn DateTime?
   cargas            Carga[]            @relation("EmpresaCarga")
   cargasAsignadas   Carga[]            @relation("TransportistaAsignado")
   cargasPrivadas    Carga[]            @relation("CargaPrivada")
@@ -128,6 +137,12 @@ model Postulacion {
   updatedAt          DateTime          @updatedAt
   vistaTransportista Boolean           @default(false)
   vistaEmpresa       Boolean           @default(false)
+  /// Momento en que el match quedó confirmado: al pagar la comisión, o al ser
+  /// aceptada si corre FREE_TIER. Recién ahí se habilitan contacto y chat. El
+  /// cobro es por postulación (y por camión que cubre): en una convocatoria de
+  /// varios camiones cada transportista paga la suya.
+  matchConfirmadoEn   DateTime?
+  comisionMpPaymentId String?
   carga              Carga             @relation(fields: [cargaId], references: [id])
   transportista      User              @relation(fields: [transportistaId], references: [id])
   mensajes           Mensaje[]
@@ -216,6 +231,9 @@ model ConfigApp {
   id                Int    @id @default(1)
   comisionTipo      String @default("FIJO")
   comisionValor     Float  @default(5000)
+  /// Monto fijo por camión cuando la comisión es PORCENTAJE y la carga no tiene
+  /// presupuesto ("a acordar"): sin base para el porcentaje, se cobra esto.
+  comisionSinPresupuesto Float @default(5000)
   precioPublicacion Float  @default(500)
 }
 

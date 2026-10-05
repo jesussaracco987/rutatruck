@@ -18,31 +18,37 @@ export async function getPrecioPublicacion(): Promise<number> {
   return config.precioPublicacion;
 }
 
-export function calcularComision(
-  config: { comisionTipo: string; comisionValor: number },
-  presupuesto: number | null,
-): number {
-  if (config.comisionTipo === "PORCENTAJE" && presupuesto !== null) {
-    return Math.round(presupuesto * config.comisionValor * 100) / 100;
+type ComisionConfig = {
+  comisionTipo: string;
+  comisionValor: number;
+  comisionSinPresupuesto: number;
+};
+
+/**
+ * Comisión por camión. En PORCENTAJE, `comisionValor` es una fracción (0.08 =
+ * 8%) y sin presupuesto no hay sobre qué aplicarla: ahí se cobra el monto fijo
+ * `comisionSinPresupuesto`. Antes se devolvía `comisionValor` tal cual, o sea
+ * $0,08.
+ */
+export function calcularComision(config: ComisionConfig, presupuesto: number | null): number {
+  if (config.comisionTipo === "PORCENTAJE") {
+    return presupuesto !== null
+      ? Math.round(presupuesto * config.comisionValor * 100) / 100
+      : config.comisionSinPresupuesto;
   }
   return config.comisionValor;
 }
 
-export async function expirarSeleccion(cargaId: number) {
-  await db.$transaction([
-    db.carga.update({
-      where: { id: cargaId },
-      data: {
-        estado: "ACTIVA",
-        transportistaAsignadoId: null,
-        transportistaPagoDeadline: null,
-      },
-    }),
-    db.postulacion.updateMany({
-      where: { cargaId, estado: "ACEPTADA" },
-      data: { estado: "RECHAZADA" },
-    }),
-  ]);
+/**
+ * Lo que paga un transportista por su postulación: la comisión es por camión,
+ * así que el que cubre varios camiones de la convocatoria paga una por cada uno.
+ */
+export function calcularComisionPostulacion(
+  config: ComisionConfig,
+  presupuesto: number | null,
+  camionesCubiertos: number,
+): number {
+  return Math.round(calcularComision(config, presupuesto) * camionesCubiertos * 100) / 100;
 }
 
 export function DEADLINE_HORAS() {

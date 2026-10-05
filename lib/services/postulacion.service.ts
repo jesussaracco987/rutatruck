@@ -1,7 +1,5 @@
 import {
   findCargaActivaDeEmpresa,
-  asignarCargaConvocatoriaCubierta,
-  asignarPagoPendienteTransportista,
   findCargaActivaParaPostular,
   findCargasEnViajeDeTransportista,
 } from "@/lib/repositories/carga.repository";
@@ -14,8 +12,9 @@ import {
   marcarVistasEmpresa,
 } from "@/lib/repositories/postulacion.repository";
 import { findUserEmailVerified } from "@/lib/repositories/user.repository";
-import { DEADLINE_HORAS } from "@/lib/comision";
+import { iniciarRondaPago } from "@/lib/services/comision.service";
 import { emit } from "@/lib/events/bus";
+import { registrarEvento } from "@/lib/analytics";
 
 const FREE_TIER = process.env.FREE_TIER === "true";
 
@@ -38,55 +37,28 @@ export async function aceptarPostulacionParaCarga(
     return { ok: false, status: 404, error: "Postulación no encontrada" };
   }
 
-  await aceptarPostulacion(postulacionId);
+  await aceptarPostulacion(postulacionId, FREE_TIER);
 
   const aceptadas = await findPostulacionesAceptadas(cargaId);
   const totalCubiertos = aceptadas.reduce((sum, p) => sum + p.camionesCubiertos, 0);
   const convocatoriaCubierta = totalCubiertos >= carga.cantidadCamiones;
 
-  if (FREE_TIER) {
-    if (convocatoriaCubierta) {
-      await asignarCargaConvocatoriaCubierta(
-        cargaId,
-        aceptadas.map((p) => p.transportistaId),
-      );
-    }
+  // La carga solo sale de ACTIVA cuando la convocatoria está cubierta. Si
+  // saliera con el primer aceptado, en una carga de varios camiones la empresa
+  // ya no podría aceptar al resto ni cerrar la convocatoria (ambas exigen
+  // estado ACTIVA).
+  const ronda = convocatoriaCubierta ? await iniciarRondaPago(cargaId, carga.titulo) : null;
 
+  // Si abrió una ronda de cobro, el aviso de "pagá tu comisión" ya lo mandó
+  // iniciarRondaPago a todos los que deben pagar, este incluido.
+  if (ronda !== "pago_pendiente") {
     emit("postulacion.aceptada", {
       transportistaId: postulacion.transportistaId,
       cargaId,
       titulo: carga.titulo,
       convocatoriaCubierta,
     });
-
-    return { ok: true, cubiertos: totalCubiertos, necesarios: carga.cantidadCamiones };
   }
-
-  // Modo pago: la carga solo sale de ACTIVA cuando la convocatoria está
-  // cubierta. Si saliera con el primer aceptado, en una carga de varios
-  // camiones la empresa ya no podría aceptar al resto ni cerrar la
-  // convocatoria (ambas exigen estado ACTIVA).
-  if (!convocatoriaCubierta) {
-    emit("postulacion.aceptada", {
-      transportistaId: postulacion.transportistaId,
-      cargaId,
-      titulo: carga.titulo,
-      convocatoriaCubierta: false,
-    });
-
-    return { ok: true, cubiertos: totalCubiertos, necesarios: carga.cantidadCamiones };
-  }
-
-  const deadlineHoras = DEADLINE_HORAS();
-  const deadline = new Date(Date.now() + deadlineHoras * 60 * 60 * 1000);
-  await asignarPagoPendienteTransportista(cargaId, aceptadas[0].transportistaId, deadline);
-
-  emit("postulacion.aceptada", {
-    transportistaId: postulacion.transportistaId,
-    cargaId,
-    titulo: carga.titulo,
-    deadlineHoras,
-  });
 
   return { ok: true, cubiertos: totalCubiertos, necesarios: carga.cantidadCamiones };
 }
@@ -155,6 +127,7 @@ export async function crearPostulacion(
   }
 
   emit("postulacion.creada", { cargaId: carga.id, empresaId: carga.empresaId, titulo: carga.titulo });
+  await registrarEvento("postulacion_enviada");
 
   return { ok: true, postulacionId: postulacion.id };
 }

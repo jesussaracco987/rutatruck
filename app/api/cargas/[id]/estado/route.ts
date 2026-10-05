@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/dal";
 import { db } from "@/lib/db";
-import { expirarSeleccion } from "@/lib/comision";
+import { resolverRondaPago } from "@/lib/services/comision.service";
 
 export async function GET(
   _req: Request,
@@ -16,19 +16,17 @@ export async function GET(
 
   const carga = await db.carga.findUnique({
     where: { id: cargaId },
-    select: { estado: true, transportistaPagoDeadline: true },
+    select: { estado: true },
   });
 
   if (!carga) return NextResponse.json({ estado: null });
 
-  // Lazy expiration: if deadline passed, revert to ACTIVA
-  if (
-    carga.estado === "PENDIENTE_PAGO_TRANSPORTISTA" &&
-    carga.transportistaPagoDeadline &&
-    carga.transportistaPagoDeadline < new Date()
-  ) {
-    await expirarSeleccion(cargaId);
-    return NextResponse.json({ estado: "ACTIVA" });
+  // Resolución perezosa de la ronda de cobro: la cierra si ya pagaron todos o
+  // la expira si venció el plazo.
+  if (carga.estado === "PENDIENTE_PAGO_TRANSPORTISTA") {
+    await resolverRondaPago(cargaId);
+    const actual = await db.carga.findUnique({ where: { id: cargaId }, select: { estado: true } });
+    return NextResponse.json({ estado: actual?.estado ?? null });
   }
 
   return NextResponse.json({ estado: carga.estado });

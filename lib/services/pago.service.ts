@@ -2,8 +2,8 @@ import { obtenerPago } from "@/lib/mercadopago";
 import {
   activarCargaPagadaSiPendiente,
   cargaYaActivada,
-  asignarCargaPorComision,
 } from "@/lib/repositories/carga.repository";
+import { registrarPagoComision } from "@/lib/services/comision.service";
 import { emit } from "@/lib/events/bus";
 
 /**
@@ -52,10 +52,9 @@ export async function procesarPago(paymentId: string) {
     return;
   }
 
-  const matchComision = externalReference.match(/^comision_carga_(\d+)$/);
+  const matchComision = externalReference.match(/^comision_post_(\d+)$/);
   if (matchComision) {
-    const cargaId = parseInt(matchComision[1]);
-    await asignarCargaPorComision(cargaId, String(pago.id));
+    await registrarPagoComision(parseInt(matchComision[1]), String(pago.id));
   }
 }
 
@@ -66,16 +65,18 @@ export async function confirmarPagoPublicacion(
   return { ok: await publicarCargaPagada(cargaId, paymentId) };
 }
 
+/**
+ * Redirect de success del pago de comisión. registrarPagoComision es
+ * idempotente, así que da igual si el webhook llegó primero.
+ */
 export async function confirmarPagoComision(
-  cargaId: number,
+  postulacionId: number,
   paymentId: string | null,
-): Promise<{ ok: boolean }> {
+): Promise<{ cargaId: number | null; ok: boolean }> {
   try {
-    // asignarCargaPorComision ya filtra por estado dentro del updateMany, así
-    // que si el webhook llegó primero simplemente no afecta filas.
-    await asignarCargaPorComision(cargaId, paymentId);
-    return { ok: true };
+    const result = await registrarPagoComision(postulacionId, paymentId);
+    return { cargaId: result?.cargaId ?? null, ok: result?.ok ?? false };
   } catch {
-    return { ok: false };
+    return { cargaId: null, ok: false };
   }
 }

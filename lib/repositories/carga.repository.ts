@@ -45,21 +45,53 @@ export async function cargaYaActivada(cargaId: number) {
   return !!carga && carga.pagado && carga.estado !== "PENDIENTE_PAGO";
 }
 
-export async function asignarCargaPorComision(cargaId: number, mpPaymentId: string | null) {
-  return db.$transaction([
+/**
+ * Cierra la ronda de cobro con todos los aceptados pagos: la carga pasa a
+ * ASIGNADA. Filtra por PENDIENTE_PAGO_TRANSPORTISTA dentro del update porque
+ * los pagos de distintos transportistas pueden acreditarse a la vez y cada uno
+ * intenta cerrar la ronda.
+ */
+export async function cerrarRondaPago(cargaId: number, transportistaIds: string[]) {
+  await db.$transaction([
     db.carga.updateMany({
       where: { id: cargaId, estado: "PENDIENTE_PAGO_TRANSPORTISTA" },
-      data: {
-        estado: "ASIGNADA",
-        transportistaMpPaymentId: mpPaymentId,
-        transportistaPagoDeadline: null,
-      },
+      data: { estado: "ASIGNADA", transportistaPagoDeadline: null },
     }),
     db.postulacion.updateMany({
       where: { cargaId, estado: "PENDIENTE" },
       data: { estado: "RECHAZADA" },
     }),
+    db.disponibilidadTransportista.updateMany({
+      where: { transportistaId: { in: transportistaIds } },
+      data: { activo: false },
+    }),
   ]);
+}
+
+/**
+ * Venció el plazo de la ronda de cobro: los aceptados que no pagaron quedan
+ * RECHAZADA y la carga vuelve a ACTIVA para que la empresa acepte reemplazos.
+ * Los que sí pagaron conservan su match (y su chat); el escalar
+ * transportistaAsignadoId pasa al primero de ellos, o a null si no hay.
+ */
+export async function expirarRondaPago(cargaId: number, transportistaAsignadoId: string | null) {
+  await db.$transaction([
+    db.carga.updateMany({
+      where: { id: cargaId, estado: "PENDIENTE_PAGO_TRANSPORTISTA" },
+      data: { estado: "ACTIVA", transportistaAsignadoId, transportistaPagoDeadline: null },
+    }),
+    db.postulacion.updateMany({
+      where: { cargaId, estado: "ACEPTADA", matchConfirmadoEn: null },
+      data: { estado: "RECHAZADA" },
+    }),
+  ]);
+}
+
+export async function findRondaPago(cargaId: number) {
+  return db.carga.findUnique({
+    where: { id: cargaId },
+    select: { estado: true, transportistaPagoDeadline: true },
+  });
 }
 
 export async function createCargaActiva(
@@ -146,28 +178,25 @@ export async function rechazarOfertaPrivada(cargaId: number) {
   await db.carga.update({ where: { id: cargaId }, data: { estado: "CANCELADA" } });
 }
 
-export async function aceptarOfertaPrivada(cargaId: number, transportistaId: string) {
-  await db.$transaction([
-    db.postulacion.create({
-      data: {
-        cargaId,
-        transportistaId,
-        estado: "ACEPTADA",
-        camionesCubiertos: 1,
-      },
-    }),
-    db.carga.update({
-      where: { id: cargaId },
-      data: {
-        estado: "ASIGNADA",
-        transportistaAsignadoId: transportistaId,
-      },
-    }),
-    db.disponibilidadTransportista.updateMany({
-      where: { transportistaId },
-      data: { activo: false },
-    }),
-  ]);
+/**
+ * Solo crea la postulación ACEPTADA: la transición de la carga (a ASIGNADA, o
+ * a PENDIENTE_PAGO_TRANSPORTISTA si hay comisión que cobrar) la hace
+ * iniciarRondaPago, igual que en una convocatoria pública.
+ */
+export async function aceptarOfertaPrivada(
+  cargaId: number,
+  transportistaId: string,
+  confirmarMatch: boolean,
+) {
+  await db.postulacion.create({
+    data: {
+      cargaId,
+      transportistaId,
+      estado: "ACEPTADA",
+      camionesCubiertos: 1,
+      ...(confirmarMatch ? { matchConfirmadoEn: new Date() } : {}),
+    },
+  });
 }
 
 /**
@@ -209,29 +238,6 @@ export async function findCargaActivaConAceptadas(cargaId: number, empresaId: st
       },
     },
   });
-}
-
-/** Mismo criterio que asignarCargaConvocatoriaCubierta: el escalar siempre queda seteado. */
-export async function cerrarConvocatoria(cargaId: number, transportistaIds: string[]) {
-  await db.$transaction([
-    db.carga.update({
-      where: { id: cargaId },
-      data: {
-        estado: "ASIGNADA",
-        ...(transportistaIds.length > 0
-          ? { transportistaAsignadoId: transportistaIds[0] }
-          : {}),
-      },
-    }),
-    db.postulacion.updateMany({
-      where: { cargaId, estado: "PENDIENTE" },
-      data: { estado: "RECHAZADA" },
-    }),
-    db.disponibilidadTransportista.updateMany({
-      where: { transportistaId: { in: transportistaIds } },
-      data: { activo: false },
-    }),
-  ]);
 }
 
 export async function createOfertaPrivada(data: Prisma.CargaUncheckedCreateInput) {

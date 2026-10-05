@@ -2,7 +2,10 @@
 
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { db } from "@/lib/db";
+import { ORIGEN_COOKIE, parseOrigen } from "@/lib/origen";
+import { registrarEvento } from "@/lib/analytics";
 import { createSession, deleteSession, type Role } from "@/lib/session";
 import { isValidEmail } from "@/lib/validate-email";
 
@@ -39,6 +42,9 @@ export async function signup(
   if (!esEmpresa && !esTransportista) {
     return { error: "Seleccioná al menos un tipo de cuenta" };
   }
+  if (formData.get("aceptaTerminos") !== "on") {
+    return { error: "Tenés que aceptar los Términos y la Política de Privacidad" };
+  }
   if (password.length < 6) {
     return { error: "La contraseña debe tener al menos 6 caracteres" };
   }
@@ -58,6 +64,9 @@ export async function signup(
   const existing = await db.user.findUnique({ where: { email } });
   if (existing) return { error: "Ya existe una cuenta con ese email" };
 
+  const cookieStore = await cookies();
+  const origen = parseOrigen(cookieStore.get(ORIGEN_COOKIE)?.value);
+
   const hashedPassword = await bcrypt.hash(password, 10);
   const user = await db.user.create({
     data: {
@@ -66,12 +75,21 @@ export async function signup(
       password: hashedPassword,
       role,
       esFlota: esFlota && esTransportista,
+      terminosAceptadosEn: new Date(),
+      origenFuente: origen?.fuente,
+      origenMedio: origen?.medio,
+      origenCampania: origen?.campania,
+      origenContenido: origen?.contenido,
+      origenLanding: origen?.landing,
+      origenReferrer: origen?.referrer,
       ...(esTransportista && notifZonaLat !== null && notifZonaLng !== null
         ? { notifZonaLat, notifZonaLng, notifRadioKm }
         : {}),
     },
   });
 
+  cookieStore.delete(ORIGEN_COOKIE);
+  await registrarEvento("sign_up", { rol: role });
   await createSession(user.id, user.role as Role, user.esFlota);
   redirect(dashboardByRole[user.role as Role]);
 }

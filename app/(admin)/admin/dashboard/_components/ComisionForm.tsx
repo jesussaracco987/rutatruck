@@ -5,12 +5,15 @@ import { useState } from "react";
 export default function ComisionForm({
   comisionTipo,
   comisionValor,
+  comisionSinPresupuesto,
 }: {
   comisionTipo: string;
   comisionValor: number;
+  comisionSinPresupuesto: number;
 }) {
   const [tipo, setTipo] = useState(comisionTipo);
   const [valor, setValor] = useState(String(comisionValor));
+  const [sinPresupuesto, setSinPresupuesto] = useState(String(comisionSinPresupuesto));
   const [pending, setPending] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
@@ -22,7 +25,11 @@ export default function ComisionForm({
       const res = await fetch("/api/admin/comision", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ comisionTipo: tipo, comisionValor: parseFloat(valor) }),
+        body: JSON.stringify({
+          comisionTipo: tipo,
+          comisionValor: parseFloat(valor),
+          comisionSinPresupuesto: parseFloat(sinPresupuesto),
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Error");
@@ -61,6 +68,7 @@ export default function ComisionForm({
           type="number"
           step={tipo === "FIJO" ? "1" : "0.01"}
           min="0"
+          max={tipo === "FIJO" ? undefined : "1"}
           value={valor}
           onChange={(e) => setValor(e.target.value)}
           className={inputClass}
@@ -68,6 +76,23 @@ export default function ComisionForm({
           required
         />
       </div>
+      {tipo === "PORCENTAJE" && (
+        <div>
+          <label className="block text-sm font-medium mb-1" style={{ color: "#9CA3AF" }}>
+            Monto si la carga no tiene presupuesto ($ARS por camión)
+          </label>
+          <input
+            type="number"
+            step="1"
+            min="0"
+            value={sinPresupuesto}
+            onChange={(e) => setSinPresupuesto(e.target.value)}
+            className={inputClass}
+            style={inputStyle}
+            required
+          />
+        </div>
+      )}
       {msg && (
         <p className={`text-sm ${msg.ok ? "text-green-400" : "text-red-400"}`}>{msg.text}</p>
       )}
