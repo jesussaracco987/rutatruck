@@ -2,19 +2,24 @@
  * Período de lanzamiento gratuito (60 días).
  *
  * `FREE_TIER=true` desactiva los cobros de MercadoPago (publicación y comisión).
- * `FREE_TIER_FIN` (opcional, fecha ISO — ej. "2026-10-18") habilita el contador
- * de días restantes en el cartel. Sin esa variable el cartel igual se muestra,
- * pero con el texto genérico "por tiempo limitado".
+ * `FIN_FREE_TIER` habilita el contador de días restantes en el cartel. En `null`
+ * el cartel igual se muestra, pero con el texto genérico "por tiempo limitado".
  */
 
 export const FREE_TIER = process.env.FREE_TIER === "true";
 
 export const FREE_TIER_DIAS = 60;
 
+/**
+ * Momento en que termina la promoción, en hora argentina. Se cambia acá y sale
+ * con el próximo deploy (antes era la variable de entorno `FREE_TIER_FIN`).
+ * `null` oculta el contador.
+ */
+const FIN_FREE_TIER: string | null = "2026-12-06T00:00:00-03:00";
+
 export function finFreeTier(): Date | null {
-  const raw = process.env.FREE_TIER_FIN;
-  if (!raw) return null;
-  const fecha = new Date(raw);
+  if (!FIN_FREE_TIER) return null;
+  const fecha = new Date(FIN_FREE_TIER);
   return isNaN(fecha.getTime()) ? null : fecha;
 }
 

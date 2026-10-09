@@ -50,6 +50,23 @@ const iconosPorDetalle: Record<string, string> = {
   queso: "🧀",
   huevos: "🥚",
 
+  // Paquetería y mercadería general
+  paquete: "📦",
+  encomienda: "📦",
+  caja: "📦",
+  bulto: "📦",
+  pallet: "📦",
+  bebida: "🥤",
+  electrodomestico: "📺",
+  mueble: "🛋️",
+
+  // Materiales de construcción
+  ladrillo: "🧱",
+  cemento: "🧱",
+  hierro: "🔩",
+  madera: "🪵",
+  arena: "⛏️",
+
   // Otros
   lana: "🧶",
   cuero: "🟫",
@@ -61,6 +78,9 @@ const iconosPorDetalle: Record<string, string> = {
 };
 
 const iconosPorCategoria: Record<string, string> = {
+  paqueteria: "📦",
+  mercaderia: "🛒",
+  materiales: "🧱",
   granos: "🌾",
   frutas: "🍎",
   verduras: "🥬",

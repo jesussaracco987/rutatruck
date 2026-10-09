@@ -18,14 +18,7 @@ import RatingChip from "@/app/_components/RatingChip";
 import ResenaForm from "@/app/_components/ResenaForm";
 import { findResenasEscritasEnCarga } from "@/lib/repositories/resena.repository";
 import { esMatchConfirmado } from "@/lib/match";
-
-const TIPO_LABELS: Record<string, string> = {
-  granos: "Granos",
-  frutas: "Frutas",
-  verduras: "Verduras",
-  animales: "Animales",
-  otro: "Otro",
-};
+import { TIPO_CARGA_LABELS as TIPO_LABELS } from "@/lib/tipos-carga";
 
 export default async function CargaPublicaPage({
   params,

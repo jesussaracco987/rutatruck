@@ -6,7 +6,7 @@ import { absoluteUrl } from "@/lib/site";
 // congelado en el valor del último deploy.
 export const revalidate = 3600;
 
-const title = "Cargas para camiones en el sur de Córdoba y Santa Fe | ClickCargo";
+const title = "Cargas para camiones en todo el país | ClickCargo";
 const description =
   "Encontrá cargas cerca tuyo, postulate desde el celular y coordiná directo con la empresa. Avisos por zona. Gratis durante el lanzamiento.";
 

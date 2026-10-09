@@ -4,14 +4,7 @@ import { db } from "@/lib/db";
 import LogoClickCargo from "@/app/_components/LogoClickCargo";
 import NotificacionBellEmpresa from "../_components/NotificacionBellEmpresa";
 import { HamburgerMenu } from "@/app/_components/HamburgerMenu";
-
-const TIPO_LABELS: Record<string, string> = {
-  granos: "Granos",
-  frutas: "Frutas",
-  verduras: "Verduras",
-  animales: "Animales",
-  otro: "Otro",
-};
+import { TIPO_CARGA_LABELS as TIPO_LABELS } from "@/lib/tipos-carga";
 
 export default async function EmpresaHistorialPage() {
   const session = await verifySession();

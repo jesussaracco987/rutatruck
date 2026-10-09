@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import LogoClickCargo from "@/app/_components/LogoClickCargo";
 import LocationAutocomplete from "./LocationAutocomplete";
+import { TIPOS_CARGA, placeholderDetalleCarga } from "@/lib/tipos-carga";
 
 const DRAFT_KEY = "clickcargo-nueva-carga-draft";
 
@@ -361,27 +362,11 @@ export default function NuevaCargaForm({
                 >
                   Seleccioná el tipo
                 </option>
-                <option value="granos" style={{ backgroundColor: "#F9FAFB" }}>
-                  Granos
-                </option>
-                <option value="frutas" style={{ backgroundColor: "#F9FAFB" }}>
-                  Frutas
-                </option>
-                <option
-                  value="verduras"
-                  style={{ backgroundColor: "#F9FAFB" }}
-                >
-                  Verduras
-                </option>
-                <option
-                  value="animales"
-                  style={{ backgroundColor: "#F9FAFB" }}
-                >
-                  Animales
-                </option>
-                <option value="otro" style={{ backgroundColor: "#F9FAFB" }}>
-                  Otro
-                </option>
+                {TIPOS_CARGA.map((t) => (
+                  <option key={t.value} value={t.value} style={{ backgroundColor: "#F9FAFB" }}>
+                    {t.label}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -405,17 +390,7 @@ export default function NuevaCargaForm({
                   onChange={set("tipoCargaDetalle")}
                   className={inputClass}
                   style={inputStyle}
-                  placeholder={
-                    fields.tipoCarga === "granos"
-                      ? "Ej: Maíz, Soja, Trigo..."
-                      : fields.tipoCarga === "frutas"
-                        ? "Ej: Banana, Manzana, Pera..."
-                        : fields.tipoCarga === "verduras"
-                          ? "Ej: Tomate, Lechuga, Papa..."
-                          : fields.tipoCarga === "animales"
-                            ? "Ej: Bovinos, Porcinos, Ovinos..."
-                            : "Especificá el tipo de carga"
-                  }
+                  placeholder={placeholderDetalleCarga(fields.tipoCarga)}
                 />
               </div>
             )}

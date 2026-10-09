@@ -9,13 +9,10 @@ import CountdownTimer from "../[id]/_components/CountdownTimer";
 import { getIconoCarga } from "@/lib/iconos-carga";
 import BottomNavTransportista from "../../_components/BottomNavTransportista";
 import FreeTierBanner from "@/app/_components/FreeTierBanner";
+import { TIPO_CARGA_LABELS as TIPO_LABELS } from "@/lib/tipos-carga";
 
 const MapaCargas = dynamic(() => import("./MapaCargas"), { ssr: false });
 const MapaInline = dynamic(() => import("./MapaInline"), { ssr: false });
-
-const TIPO_LABELS: Record<string, string> = {
-  granos: "Granos", frutas: "Frutas", verduras: "Verduras", animales: "Animales", otro: "Otro",
-};
 
 type PendientePago = {
   id: number;

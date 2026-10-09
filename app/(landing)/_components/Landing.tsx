@@ -23,20 +23,6 @@ type Copy = {
   otra: { texto: string; link: string; href: string };
 };
 
-// Localidades de la zona de lanzamiento. Se muestran como texto y ayudan a que
-// la página aparezca en búsquedas locales.
-const LOCALIDADES = [
-  "Río Cuarto",
-  "Villa María",
-  "General Levalle",
-  "Laboulaye",
-  "La Carlota",
-  "Vicuña Mackenna",
-  "General Deheza",
-  "Venado Tuerto",
-  "Rufino",
-];
-
 const COPY: Record<LandingVariant, Copy> = {
   empresa: {
     titulo: "Conseguí camión para tu carga sin llamar a medio mundo",
@@ -93,7 +79,7 @@ const COPY: Record<LandingVariant, Copy> = {
       {
         pregunta: "¿En qué zona funciona?",
         respuesta:
-          "Estamos arrancando en el sur de Córdoba y el sur de Santa Fe, pero podés publicar cargas con origen y destino en cualquier punto del país.",
+          "En todo el país. Podés publicar cargas con origen y destino en cualquier punto de Argentina.",
       },
     ],
     otra: {
@@ -157,7 +143,7 @@ const COPY: Record<LandingVariant, Copy> = {
       {
         pregunta: "¿En qué zona hay cargas?",
         respuesta:
-          "Estamos arrancando en el sur de Córdoba y el sur de Santa Fe. Podés recibir avisos solo de tu zona o de todo el país.",
+          "En todo el país. Podés recibir avisos solo de tu zona o de cualquier punto de Argentina.",
       },
     ],
     otra: {
@@ -223,7 +209,7 @@ export default function Landing({ variant }: { variant: LandingVariant }) {
               className="text-xs font-bold uppercase tracking-widest mb-4"
               style={{ color: VERDE }}
             >
-              Sur de Córdoba y Santa Fe
+              En todo el país
             </p>
             <h1 className="text-4xl sm:text-5xl font-black leading-[1.08] tracking-tight text-balance">
               {copy.titulo}
@@ -327,29 +313,6 @@ export default function Landing({ variant }: { variant: LandingVariant }) {
                       {beneficio.detalle}
                     </p>
                   </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        {/* Zona */}
-        <section className="border-t" style={{ borderColor: "#12201F" }}>
-          <div className="mx-auto max-w-5xl px-5 py-14">
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
-              Arrancamos en tu zona
-            </h2>
-            <p className="mt-3 text-sm sm:text-base max-w-2xl leading-relaxed" style={{ color: "#9CA3AF" }}>
-              ClickCargo conecta empresas y transportistas del sur de Córdoba y el sur de Santa Fe.
-            </p>
-            <ul className="mt-6 flex flex-wrap gap-2">
-              {LOCALIDADES.map((localidad) => (
-                <li
-                  key={localidad}
-                  className="text-sm px-3.5 py-1.5 rounded-full border"
-                  style={{ ...TARJETA, color: "#D1D5DB" }}
-                >
-                  {localidad}
                 </li>
               ))}
             </ul>

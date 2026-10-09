@@ -9,14 +9,7 @@ import FiltroEstado from "@/app/_components/FiltroEstado";
 import FreeTierBanner from "@/app/_components/FreeTierBanner";
 import { getIconoCarga } from "@/lib/iconos-carga";
 import { FREE_TIER, diasRestantesFreeTier } from "@/lib/free-tier";
-
-const TIPO_LABELS: Record<string, string> = {
-  granos: "Granos",
-  frutas: "Frutas",
-  verduras: "Verduras",
-  animales: "Animales",
-  otro: "Otro",
-};
+import { TIPO_CARGA_LABELS as TIPO_LABELS } from "@/lib/tipos-carga";
 
 type EstadoConfig = {
   label: string;
