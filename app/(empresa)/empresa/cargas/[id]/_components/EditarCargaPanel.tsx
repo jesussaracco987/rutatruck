@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
+import { TIPOS_CARGA } from "@/lib/tipos-carga";
 
 interface CargaEditable {
   id: number;
@@ -196,21 +197,11 @@ export default function EditarCargaPanel({ carga, sinTransportista }: { carga: C
             className={inputClass}
             style={inputStyle}
           >
-            <option value="granos" style={{ backgroundColor: "#F9FAFB" }}>
-              Granos
-            </option>
-            <option value="frutas" style={{ backgroundColor: "#F9FAFB" }}>
-              Frutas
-            </option>
-            <option value="verduras" style={{ backgroundColor: "#F9FAFB" }}>
-              Verduras
-            </option>
-            <option value="animales" style={{ backgroundColor: "#F9FAFB" }}>
-              Animales
-            </option>
-            <option value="otro" style={{ backgroundColor: "#F9FAFB" }}>
-              Otro
-            </option>
+            {TIPOS_CARGA.map((t) => (
+              <option key={t.value} value={t.value} style={{ backgroundColor: "#F9FAFB" }}>
+                {t.label}
+              </option>
+            ))}
           </select>
         </div>
 

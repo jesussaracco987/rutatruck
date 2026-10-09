@@ -27,11 +27,14 @@ function notificarCargaDisponibleCercana({
   origenLng: number | null;
   empresaId: string;
 }) {
+  // El título de una carga publicada ya es "origen → destino": repetirlo
+  // duplicaba la ruta en el aviso. Solo se antepone si dice otra cosa.
+  const ruta = `${origen} → ${destino}`;
   after(() =>
     sendPushToTransportistasCercanos(
       {
         title: "Nueva carga disponible",
-        body: `${titulo} · ${origen} → ${destino}`,
+        body: titulo && titulo !== ruta ? `${titulo} · ${ruta}` : ruta,
         url: "/transportista/cargas",
       },
       origenLat,

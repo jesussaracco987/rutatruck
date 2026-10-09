@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Map as MapboxMap, Marker as MapboxMarker } from "mapbox-gl";
 import Link from "next/link";
 import { getIconoCarga } from "@/lib/iconos-carga";
+import { TIPO_CARGA_LABELS as TIPO_LABELS, TIPO_CARGA_COLORES } from "@/lib/tipos-carga";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 
@@ -23,10 +24,6 @@ export type CargaMapItem = {
   cantidadCamiones: number;
 };
 
-const TIPO_LABELS: Record<string, string> = {
-  granos: "Granos", frutas: "Frutas", verduras: "Verduras", animales: "Animales", otro: "Otro",
-};
-
 function norm(s: string) {
   return s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
 }
@@ -41,8 +38,7 @@ function getPinColor(tipoCarga: string, detalle: string | null): string {
   if (["tomate","papa","cebolla","ajo","zanahoria","zapallo","lechuga","pimiento"].some(x => d.includes(x))) return "#4CAF50";
   if (["bovino","porcino","ovino","caprino","equino"].some(x => d.includes(x))) return "#8B4513";
   if (d.includes("aviar")) return "#E53935";
-  const cat: Record<string, string> = { granos: "#C8A800", frutas: "#FF6B35", verduras: "#4CAF50", animales: "#8B4513" };
-  return cat[tipoCarga] ?? "#9E9E9E";
+  return TIPO_CARGA_COLORES[tipoCarga] ?? "#9E9E9E";
 }
 
 function useIsDesktop() {

@@ -5,14 +5,7 @@ import LogoClickCargo from "@/app/_components/LogoClickCargo";
 import NotificacionBell from "../_components/NotificacionBell";
 import { HamburgerMenu } from "@/app/_components/HamburgerMenu";
 import { whereTransportistaDeLaCarga } from "@/lib/repositories/carga.repository";
-
-const TIPO_LABELS: Record<string, string> = {
-  granos: "Granos",
-  frutas: "Frutas",
-  verduras: "Verduras",
-  animales: "Animales",
-  otro: "Otro",
-};
+import { TIPO_CARGA_LABELS as TIPO_LABELS } from "@/lib/tipos-carga";
 
 export default async function TransportistaHistorialPage() {
   const session = await verifySession();
