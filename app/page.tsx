@@ -3,8 +3,31 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { decrypt } from "@/lib/session";
-import truckImg from "@/app/assets/truck2.png";
+import truckImg from "@/app/assets/truck2.jpg";
 import { FREE_TIER, diasRestantesFreeTier } from "@/lib/free-tier";
+import { OG_IMAGE, absoluteUrl } from "@/lib/site";
+import JsonLd from "@/app/_components/JsonLd";
+import type { Metadata } from "next";
+
+// Es lo que aparece cuando alguien busca "ClickCargo" en Google.
+const title = "ClickCargo: cargas y camiones conectados";
+const description =
+  "Conectamos empresas que necesitan transporte con transportistas de todo el país. Publicá tu carga o encontrá viajes cerca, con avisos por zona y chat directo.";
+
+export const metadata: Metadata = {
+  title,
+  description,
+  alternates: { canonical: absoluteUrl("/") },
+  openGraph: {
+    title,
+    description,
+    url: absoluteUrl("/"),
+    siteName: "ClickCargo",
+    locale: "es_AR",
+    type: "website",
+    images: [OG_IMAGE],
+  },
+};
 
 const dashboardByRole = {
   EMPRESA: "/empresa/dashboard",
@@ -25,6 +48,7 @@ export default async function LandingPage() {
       className="min-h-screen flex items-center justify-center"
       style={{ backgroundColor: "#060F0F" }}
     >
+      <JsonLd />
       {/* Phone-width container */}
       <div
         className="relative w-full sm:max-w-[420px] flex flex-col overflow-hidden"
