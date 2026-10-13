@@ -30,6 +30,8 @@ export const metadata: Metadata = {
   },
   other: {
     "mobile-web-app-capable": "yes",
+    // Verificación del dominio en el portfolio comercial de Meta.
+    "facebook-domain-verification": "jztya5uex9s6tndi2xzbwsa2lopb99",
   },
 };
 
