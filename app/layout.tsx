@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import Analytics from "./_components/Analytics";
 import InstallPWA from "./_components/InstallPWA";
 import ServiceWorkerRegister from "./_components/ServiceWorkerRegister";
+import { OG_IMAGE, SITE_URL } from "@/lib/site";
 import "./globals.css";
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -16,10 +17,23 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const description =
+  "Plataforma que conecta empresas con transportistas para coordinar cargas de forma simple y segura";
+
 export const metadata: Metadata = {
+  // Para que las URLs relativas (la imagen de vista previa) salgan absolutas.
+  metadataBase: SITE_URL ? new URL(SITE_URL) : undefined,
   title: "ClickCargo — Red Integral de Cargas",
-  description:
-    "Plataforma que conecta empresas con transportistas para coordinar cargas de forma simple y segura",
+  description,
+  openGraph: {
+    title: "ClickCargo — Red Integral de Cargas",
+    description,
+    siteName: "ClickCargo",
+    locale: "es_AR",
+    type: "website",
+    images: [OG_IMAGE],
+  },
+  twitter: { card: "summary_large_image" },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

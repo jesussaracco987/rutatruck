@@ -3,7 +3,7 @@ import Link from "next/link";
 import LogoClickCargo from "@/app/_components/LogoClickCargo";
 import truckImg from "@/app/assets/truck2.png";
 import { FREE_TIER, diasRestantesFreeTier } from "@/lib/free-tier";
-import { PLAY_STORE_URL, whatsappUrl } from "@/lib/site";
+import { playStoreUrl, whatsappUrl } from "@/lib/site";
 
 export type LandingVariant = "empresa" | "transportista";
 
@@ -361,7 +361,7 @@ export default function Landing({ variant }: { variant: LandingVariant }) {
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
               <BotonPrincipal href={copy.registroHref}>{copy.cta}</BotonPrincipal>
               <a
-                href={PLAY_STORE_URL}
+                href={playStoreUrl({ source: "web", medium: "landing", campaign: `para-${variant}s` })}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center w-full sm:w-auto px-7 py-4 rounded-2xl font-bold text-sm tracking-wide border transition-opacity hover:opacity-80"

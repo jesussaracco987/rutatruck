@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Landing from "../_components/Landing";
-import { absoluteUrl } from "@/lib/site";
+import { OG_IMAGE, absoluteUrl } from "@/lib/site";
 
 // El contador de días de la promo depende de la fecha: sin esto quedaría
 // congelado en el valor del último deploy.
@@ -21,6 +21,7 @@ export const metadata: Metadata = {
     siteName: "ClickCargo",
     locale: "es_AR",
     type: "website",
+    images: [OG_IMAGE],
   },
 };
 
