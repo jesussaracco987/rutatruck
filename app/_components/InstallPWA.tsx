@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { playStoreUrl } from "@/lib/site";
 
 const DISMISSED_KEY = "pwa-dismissed-ts";
 const REDISPLAY_DAYS = 7;
@@ -9,6 +10,7 @@ export default function InstallPWA() {
   const router = useRouter();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isIOS, setIsIOS] = useState(false);
+  const [isAndroid, setIsAndroid] = useState(false);
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -24,6 +26,25 @@ export default function InstallPWA() {
     if (/iPhone|iPad|iPod/.test(ua)) {
       setIsIOS(true);
       setShow(true);
+      return;
+    }
+
+    // En Android la app se instala desde Play Store (es la misma web empaquetada
+    // como TWA), así cuenta como descarga y puede dejar reseña. Si ya está
+    // instalada, Chrome la reporta por getInstalledRelatedApps (ver manifest.ts).
+    if (/Android/.test(ua)) {
+      setIsAndroid(true);
+      const nav = window.navigator as Navigator & {
+        getInstalledRelatedApps?: () => Promise<unknown[]>;
+      };
+      if (!nav.getInstalledRelatedApps) {
+        setShow(true);
+        return;
+      }
+      nav
+        .getInstalledRelatedApps()
+        .then((apps: unknown[]) => setShow(apps.length === 0))
+        .catch(() => setShow(true));
       return;
     }
 
@@ -51,7 +72,14 @@ export default function InstallPWA() {
 
   if (!show) return null;
 
-  const handleCardClick = isIOS ? () => router.push("/descargar") : handleInstall;
+  const handleCardClick = isIOS
+    ? () => router.push("/descargar")
+    : isAndroid
+      ? () => {
+          dismiss();
+          window.location.href = playStoreUrl({ source: "web", medium: "banner_instalar" });
+        }
+      : handleInstall;
 
   return (
     <div
@@ -68,6 +96,8 @@ export default function InstallPWA() {
         <p className="text-sm font-medium text-gray-800">Instalá ClickCargo</p>
         {isIOS ? (
           <p className="text-xs text-gray-500 mt-0.5">Tocá aquí para ver cómo instalarlo →</p>
+        ) : isAndroid ? (
+          <p className="text-xs text-gray-500 mt-0.5">Gratis en Google Play</p>
         ) : (
           <p className="text-xs text-gray-500 mt-0.5">Tocá para instalar en tu pantalla de inicio</p>
         )}

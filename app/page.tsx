@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { decrypt } from "@/lib/session";
 import truckImg from "@/app/assets/truck2.png";
+import { FREE_TIER, diasRestantesFreeTier } from "@/lib/free-tier";
 
 const dashboardByRole = {
   EMPRESA: "/empresa/dashboard",
@@ -17,6 +18,8 @@ export default async function LandingPage() {
   const cookieStore = await cookies();
   const session = await decrypt(cookieStore.get("session")?.value);
   if (session?.role) redirect(dashboardByRole[session.role]);
+  const dias = diasRestantesFreeTier();
+  const gratis = FREE_TIER && dias !== 0;
   return (
     <div
       className="min-h-screen flex items-center justify-center"
@@ -107,15 +110,29 @@ export default async function LandingPage() {
             SOY EMPRESA
           </Link>
 
-          <div className="flex items-center justify-center gap-2 pt-1">
-            <span className="text-sm" style={{ color: "#9CA3AF" }}>Lanzamiento inicial</span>
-            <span
-              className="text-sm font-black px-2.5 py-0.5 rounded-full"
-              style={{ backgroundColor: "#4ADE8022", color: "#4ADE80", border: "1px solid #4ADE8044" }}
-            >
-              GRATIS 60 días
-            </span>
-          </div>
+          {/* Quien llega desde redes sin conocer la app puede ver de qué se trata */}
+          <p className="text-center text-xs" style={{ color: "#9CA3AF" }}>
+            ¿Qué es ClickCargo?{" "}
+            <Link href="/para-empresas" className="font-semibold underline underline-offset-2">
+              Empresas
+            </Link>
+            {" · "}
+            <Link href="/para-transportistas" className="font-semibold underline underline-offset-2">
+              Transportistas
+            </Link>
+          </p>
+
+          {gratis && (
+            <div className="flex items-center justify-center gap-2 pt-1">
+              <span className="text-sm" style={{ color: "#9CA3AF" }}>Lanzamiento inicial</span>
+              <span
+                className="text-sm font-black px-2.5 py-0.5 rounded-full"
+                style={{ backgroundColor: "#4ADE8022", color: "#4ADE80", border: "1px solid #4ADE8044" }}
+              >
+                {dias === null ? "GRATIS" : dias === 1 ? "GRATIS hasta mañana" : `GRATIS ${dias} días más`}
+              </span>
+            </div>
+          )}
 
           <p className="text-center text-xs" style={{ color: "#6B7280" }}>
             ¿Ya tenés cuenta?{" "}
