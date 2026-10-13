@@ -11,6 +11,12 @@ export const SITE_URL = process.env.NEXTAUTH_URL?.replace(/\/+$/, "") || null;
 export const PLAY_STORE_URL =
   "https://play.google.com/store/apps/details?id=ar.com.clickcargo.twa";
 
+/** Perfiles oficiales de ClickCargo en redes (los usa JsonLd para Google). */
+export const PERFILES_SOCIALES: string[] = [
+  "https://www.instagram.com/clickcargoarg/",
+  "https://www.facebook.com/profile.php?id=61595386619664",
+];
+
 /** URL absoluta de una ruta, o `undefined` si no hay URL base configurada. */
 export function absoluteUrl(path: string): string | undefined {
   return SITE_URL ? `${SITE_URL}${path}` : undefined;

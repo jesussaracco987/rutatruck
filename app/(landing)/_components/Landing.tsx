@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
+import JsonLd from "@/app/_components/JsonLd";
 import LogoClickCargo from "@/app/_components/LogoClickCargo";
-import truckImg from "@/app/assets/truck2.png";
+import truckImg from "@/app/assets/truck2.jpg";
 import { FREE_TIER, diasRestantesFreeTier } from "@/lib/free-tier";
 import { playStoreUrl, whatsappUrl } from "@/lib/site";
 
@@ -27,7 +28,7 @@ const COPY: Record<LandingVariant, Copy> = {
   empresa: {
     titulo: "Conseguí camión para tu carga sin llamar a medio mundo",
     bajada:
-      "Publicás la carga una sola vez y los transportistas de la zona se postulan. Elegís con quién viajar y coordinás por chat.",
+      "Publicás el flete una sola vez y los transportistas de la zona se postulan. Elegís con quién viajar y coordinás por chat.",
     cta: "Publicar mi primera carga",
     registroHref: "/registro?rol=empresa",
     whatsappTexto: "Hola, tengo una empresa y quiero publicar cargas en ClickCargo.",
@@ -69,7 +70,7 @@ const COPY: Record<LandingVariant, Copy> = {
       {
         pregunta: "¿Qué tipo de cargas puedo publicar?",
         respuesta:
-          "La que necesites mover. Al publicar indicás el tipo de carga, el peso, la fecha y, si querés, el camión que preferís.",
+          "La que necesites mover: desde un flete chico en utilitario hasta varios camiones completos. Al publicar indicás el tipo de carga, el peso, la fecha y, si querés, el camión que preferís.",
       },
       {
         pregunta: "¿Tengo que instalar algo?",
@@ -188,6 +189,7 @@ export default function Landing({ variant }: { variant: LandingVariant }) {
 
   return (
     <div className="flex-1 text-white" style={{ backgroundColor: FONDO }}>
+      <JsonLd />
       <header className="mx-auto max-w-5xl px-5 py-5 flex items-center justify-between">
         <Link href="/">
           <LogoClickCargo size={40} />
