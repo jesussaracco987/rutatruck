@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getSession } from "@/lib/dal";
 import { db } from "@/lib/db";
 import { isEmpresa } from "@/lib/roles";
+import { findDisponibilidadesParaEmpresa } from "@/lib/repositories/disponibilidad.repository";
+import { getVehiculoLabel } from "@/lib/vehiculos";
 
 export async function GET() {
   const session = await getSession();
@@ -16,7 +18,7 @@ export async function GET() {
       transportista: { select: { name: true } },
     } as const;
 
-    const [enConfirmacion, postulacionesNuevas, postulacionesVistas] = await Promise.all([
+    const [enConfirmacion, postulacionesNuevas, postulacionesVistas, disponibilidades] = await Promise.all([
       db.carga.findMany({
         where: { empresaId: session.userId, estado: "EN_CONFIRMACION" },
         select: { id: true, titulo: true, origen: true, destino: true },
@@ -32,12 +34,23 @@ export async function GET() {
         orderBy: { createdAt: "desc" },
         take: 4,
       }),
+      findDisponibilidadesParaEmpresa(session.userId),
     ]);
+
+    const disponibilidadNotif = (d: (typeof disponibilidades)[number]) => ({
+      tipo: "disponibilidad" as const,
+      href: "/empresa/transportistas",
+      titulo: d.transportista.name,
+      origen: d.zona,
+      destino: null,
+      extra: getVehiculoLabel(d.vehiculo),
+      vista: !d.nueva,
+    });
 
     const notificaciones = [
       ...enConfirmacion.map((c) => ({
         tipo: "confirmacion" as const,
-        cargaId: c.id,
+        href: `/empresa/cargas/${c.id}`,
         titulo: c.titulo,
         origen: c.origen,
         destino: c.destino,
@@ -46,22 +59,24 @@ export async function GET() {
       })),
       ...postulacionesNuevas.map((p) => ({
         tipo: "postulacion" as const,
-        cargaId: p.carga.id,
+        href: `/empresa/cargas/${p.carga.id}`,
         titulo: p.carga.titulo,
         origen: p.carga.origen,
         destino: p.carga.destino,
         extra: p.transportista.name,
         vista: false,
       })),
+      ...disponibilidades.filter((d) => d.nueva).map(disponibilidadNotif),
       ...postulacionesVistas.map((p) => ({
         tipo: "postulacion" as const,
-        cargaId: p.carga.id,
+        href: `/empresa/cargas/${p.carga.id}`,
         titulo: p.carga.titulo,
         origen: p.carga.origen,
         destino: p.carga.destino,
         extra: p.transportista.name,
         vista: true,
       })),
+      ...disponibilidades.filter((d) => !d.nueva).slice(0, 4).map(disponibilidadNotif),
     ];
 
     return NextResponse.json({ notificaciones });

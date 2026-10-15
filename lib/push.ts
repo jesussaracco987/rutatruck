@@ -1,5 +1,6 @@
 import webpush from "web-push";
 import { db } from "./db";
+import { enAlcance, enZona, tieneZonaConfigurada } from "./zona";
 
 webpush.setVapidDetails(
   process.env.VAPID_SUBJECT!,
@@ -13,49 +14,9 @@ const ROLES_TRANSPORTISTA = [
   "EMPRESA_TRANSPORTISTA",
 ] as const;
 
+const ROLES_EMPRESA = ["EMPRESA", "EMPRESA_TRANSPORTISTA"] as const;
+
 export type PushPayload = { title: string; body: string; url?: string };
-
-type Zona = {
-  notifZonaLat: number | null;
-  notifZonaLng: number | null;
-  notifRadioKm: number | null;
-};
-
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
-  const R = 6371;
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-/** El usuario configuró una zona de interés completa (centro + radio). */
-export function tieneZonaConfigurada(zona: Zona): boolean {
-  return (
-    zona.notifRadioKm !== null && zona.notifZonaLat !== null && zona.notifZonaLng !== null
-  );
-}
-
-/**
- * Un origen entra en la zona del usuario si no configuró zona (recibe todo),
- * si la carga no tiene coordenadas (no hay con qué descartarla) o si la
- * distancia real cae dentro del radio.
- */
-export function enZona(
-  zona: Zona,
-  origenLat: number | null,
-  origenLng: number | null,
-): boolean {
-  if (!tieneZonaConfigurada(zona)) return true;
-  if (origenLat === null || origenLng === null) return true;
-  return (
-    haversineKm(zona.notifZonaLat!, zona.notifZonaLng!, origenLat, origenLng) <=
-    zona.notifRadioKm!
-  );
-}
 
 /**
  * Envío individual. Es el único lugar que habla con web-push: centraliza el
@@ -139,6 +100,37 @@ export async function sendPushToTransportistasCercanos(
   const filtered = subscriptions.filter((sub) => enZona(sub.user, origenLat, origenLng));
 
   await enLotes(filtered, (sub) => enviar(sub, payload, "sendPushToTransportistasCercanos"));
+}
+
+/**
+ * Espejo de sendPushToTransportistasCercanos para el otro lado: avisa a las
+ * empresas que un transportista quedó disponible cerca. Usa la misma zona de
+ * interés del usuario; una empresa sin zona configurada recibe todos. Con
+ * zona, alcanza con que la cubra su radio o el radio de trabajo del
+ * transportista (`radioKm` de la disponibilidad).
+ */
+export async function sendPushToEmpresasCercanas(
+  payload: PushPayload,
+  lat: number,
+  lng: number,
+  radioKm: number | null,
+  excludeUserId?: string
+) {
+  const subscriptions = await db.pushSubscription.findMany({
+    where: {
+      user: {
+        role: { in: [...ROLES_EMPRESA] },
+        ...(excludeUserId ? { id: { not: excludeUserId } } : {}),
+      },
+    },
+    include: {
+      user: { select: { notifZonaLat: true, notifZonaLng: true, notifRadioKm: true } },
+    },
+  });
+
+  const filtered = subscriptions.filter((sub) => enAlcance(sub.user, lat, lng, radioKm));
+
+  await enLotes(filtered, (sub) => enviar(sub, payload, "sendPushToEmpresasCercanas"));
 }
 
 export async function sendPushToUser(userId: string, payload: PushPayload) {

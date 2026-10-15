@@ -43,6 +43,25 @@ type Props = {
   notifZonaLng: number | null;
   notifRadioKm: number | null;
   showNotificaciones?: boolean;
+  /** Qué se notifica según la zona: cargas (lado transportista) o transportistas disponibles (lado empresa). */
+  avisosDe?: "cargas" | "transportistas";
+  /** Cuenta EMPRESA_TRANSPORTISTA: la zona es una sola para los dos lados. */
+  zonaCompartida?: boolean;
+};
+
+const TEXTOS = {
+  cargas: {
+    titulo: "Notificaciones de cargas nuevas",
+    todas: "Todas las cargas",
+    conZona: "Vas a recibir avisos solo de cargas dentro del radio elegido desde tu zona.",
+    sinZona: "Vas a recibir avisos de todas las cargas nuevas, sin importar la distancia.",
+  },
+  transportistas: {
+    titulo: "Notificaciones de transportistas disponibles",
+    todas: "Todos",
+    conZona: "Vas a recibir avisos solo de transportistas disponibles dentro del radio elegido desde tu zona.",
+    sinZona: "Vas a recibir avisos de todos los transportistas que se marquen disponibles, sin importar la distancia.",
+  },
 };
 
 export default function CuentaForm({
@@ -53,7 +72,10 @@ export default function CuentaForm({
   notifZonaLng,
   notifRadioKm,
   showNotificaciones = true,
+  avisosDe = "cargas",
+  zonaCompartida = false,
 }: Props) {
+  const textos = TEXTOS[avisosDe];
   const [pending, startTransition] = useTransition();
   const [phone, setPhone] = useState(initialPhone ?? "");
   const [zona, setZona] = useState("");
@@ -140,7 +162,7 @@ export default function CuentaForm({
       {/* Notificaciones */}
       {showNotificaciones && (
       <div>
-        <span style={labelStyle}>Notificaciones de cargas nuevas</span>
+        <span style={labelStyle}>{textos.titulo}</span>
         <div className="flex gap-2 mb-3">
           <button
             type="button"
@@ -152,7 +174,7 @@ export default function CuentaForm({
               color: !hasZona ? "#FFFFFF" : "#374151",
             }}
           >
-            Todas las cargas
+            {textos.todas}
           </button>
           <button
             type="button"
@@ -217,10 +239,13 @@ export default function CuentaForm({
         )}
 
         <p className="text-xs mt-3" style={{ color: "#6B7280" }}>
-          {hasZona
-            ? "Vas a recibir avisos solo de cargas dentro del radio elegido desde tu zona."
-            : "Vas a recibir avisos de todas las cargas nuevas, sin importar la distancia."}
+          {hasZona ? textos.conZona : textos.sinZona}
         </p>
+        {zonaCompartida && (
+          <p className="text-xs mt-1.5" style={{ color: "#9CA3AF" }}>
+            La zona es la misma para tu perfil empresa y transportista: aplica tanto a avisos de cargas como de transportistas.
+          </p>
+        )}
       </div>
       )}
 

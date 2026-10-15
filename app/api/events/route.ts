@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       ctrl = controller;
-      sseSubscribe(userId, ctrl);
+      sseSubscribe(userId, vista, ctrl);
 
       // Send initial state immediately
       await pushEstado();
@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
       }, 10000);
     },
     cancel() {
-      sseUnsubscribe(userId, ctrl);
+      sseUnsubscribe(userId, vista, ctrl);
       clearInterval(pingId);
     },
   });

@@ -6,11 +6,11 @@ import { useRouter } from "next/navigation";
 import { useNotifCount, useAccionesPendientes } from "@/app/_components/EventsProvider";
 
 type Notif = {
-  tipo: "confirmacion" | "postulacion";
-  cargaId: number;
+  tipo: "confirmacion" | "postulacion" | "disponibilidad";
+  href: string;
   titulo: string;
   origen: string;
-  destino: string;
+  destino: string | null;
   extra: string | null;
   vista: boolean;
 };
@@ -56,10 +56,10 @@ export default function NotificacionBellEmpresa() {
     setLoading(false);
   }
 
-  async function handleItemClick(cargaId: number) {
+  async function handleItemClick(href: string) {
     setOpen(false);
     await fetch("/api/notificaciones/empresa/mark-seen", { method: "POST" });
-    router.push(`/empresa/cargas/${cargaId}`);
+    router.push(href);
   }
 
   async function handleMarkAll() {
@@ -113,7 +113,7 @@ export default function NotificacionBellEmpresa() {
             <span className="text-sm font-semibold" style={{ color: "#C4DCDC" }}>
               Notificaciones
             </span>
-            {notifs.some((n) => n.tipo === "postulacion" && !n.vista) && (
+            {notifs.some((n) => n.tipo !== "confirmacion" && !n.vista) && (
               <button
                 onClick={handleMarkAll}
                 className="text-xs transition-opacity hover:opacity-70"
@@ -146,20 +146,22 @@ export default function NotificacionBellEmpresa() {
                   )}
                   <div className="border-b last:border-b-0" style={{ borderColor: "#1E3838" }}>
                     <button
-                      onClick={() => handleItemClick(n.cargaId)}
+                      onClick={() => handleItemClick(n.href)}
                       className="w-full text-left px-4 py-3 transition-colors hover:bg-white/5"
                       style={{ opacity: n.vista ? 0.55 : 1 }}
                     >
                       <p className="text-sm font-medium" style={{ color: "#E5E7EB" }}>
                         {n.tipo === "confirmacion"
                           ? "Viaje completado — confirmá o disputá"
-                          : `Nueva postulación${n.extra ? ` de ${n.extra}` : ""}`}
+                          : n.tipo === "disponibilidad"
+                            ? `Transportista disponible${n.extra ? ` · ${n.extra}` : ""}`
+                            : `Nueva postulación${n.extra ? ` de ${n.extra}` : ""}`}
                       </p>
                       <p className="text-xs mt-0.5 font-semibold" style={{ color: "#C4DCDC" }}>
                         {n.titulo}
                       </p>
                       <p className="text-xs mt-0.5" style={{ color: "#6B7280" }}>
-                        {n.origen} → {n.destino}
+                        {n.destino ? `${n.origen} → ${n.destino}` : n.origen}
                       </p>
                     </button>
                   </div>
