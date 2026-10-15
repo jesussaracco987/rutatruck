@@ -6,7 +6,9 @@ import { useRouter } from "next/navigation";
 import { useNotifCount, usePrivCount } from "@/app/_components/EventsProvider";
 
 type Notif = {
-  id: number;
+  id: string;
+  /** "oferta" = oferta directa sin responder: se va respondiéndola, no mirándola. */
+  tipo: "aceptada" | "oferta";
   carga: { id: number; titulo: string; origen: string; destino: string };
   vista: boolean;
 };
@@ -100,7 +102,7 @@ export default function NotificacionBell() {
             <span className="text-sm font-semibold" style={{ color: "#C4DCDC" }}>
               Notificaciones
             </span>
-            {notifs.some((n) => !n.vista) && (
+            {notifs.some((n) => n.tipo === "aceptada" && !n.vista) && (
               <button
                 onClick={handleMarkAll}
                 className="text-xs transition-opacity hover:opacity-70"
@@ -138,7 +140,9 @@ export default function NotificacionBell() {
                       style={{ opacity: n.vista ? 0.55 : 1 }}
                     >
                       <p className="text-sm font-medium" style={{ color: "#E5E7EB" }}>
-                        ¡Tu postulación fue aceptada!
+                        {n.tipo === "oferta"
+                          ? "Nueva oferta directa — respondé"
+                          : "¡Tu postulación fue aceptada!"}
                       </p>
                       <p className="text-xs mt-0.5 font-semibold" style={{ color: "#C4DCDC" }}>
                         {n.carga.titulo}

@@ -60,6 +60,16 @@ export type Events = {
   "postulacion.vista_empresa": {
     empresaId: string;
   };
+  /** El transportista pasó de no disponible (sin publicar, desactivada o vencida) a disponible. */
+  "disponibilidad.activada": {
+    transportistaId: string;
+    vehiculo: string;
+    zona: string;
+    lat: number;
+    lng: number;
+    radioKm: number | null;
+    disponibleHoy: boolean;
+  };
   "oferta-privada.creada": {
     transportistaId: string;
     cargaId: number;

@@ -28,6 +28,8 @@ model User {
   origenReferrer    String?
   /// Aceptación de Términos y Política de Privacidad en el registro.
   terminosAceptadosEn DateTime?
+  /// Hasta cuándo vio (lado empresa) los avisos de transportistas disponibles en la campana.
+  disponibilidadesVistasEn DateTime @default(now())
   cargas            Carga[]            @relation("EmpresaCarga")
   cargasAsignadas   Carga[]            @relation("TransportistaAsignado")
   cargasPrivadas    Carga[]            @relation("CargaPrivada")
@@ -59,6 +61,10 @@ model DisponibilidadTransportista {
   salidaDestino   String?
   activo          Boolean  @default(true)
   actualizadoEn   DateTime @updatedAt
+  /// Cuándo pasó de no disponible (inexistente, desactivada o vencida) a vigente.
+  /// A diferencia de `actualizadoEn`, re-guardar estando vigente no la mueve:
+  /// es lo que dispara el aviso a empresas y lo que cuenta la campana.
+  disponibleDesde DateTime @default(now())
   transportista   User     @relation(fields: [transportistaId], references: [id], onDelete: Cascade)
 }
 

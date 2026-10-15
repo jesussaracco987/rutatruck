@@ -1,25 +1,38 @@
 import { db } from "./db";
 import { countMensajesNoLeidos } from "./repositories/mensaje.repository";
+import { countDisponibilidadesNuevas } from "./repositories/disponibilidad.repository";
 
 type Ctrl = ReadableStreamDefaultController<Uint8Array>;
+export type Vista = "empresa" | "transportista";
 
+/**
+ * Keyed por usuario Y vista. Una cuenta EMPRESA_TRANSPORTISTA puede tener
+ * abiertos streams de los dos lados; con la clave solo por userId, un
+ * notifyEmpresa() (p. ej. nueva postulación) le llegaba también al stream del
+ * lado transportista y le pisaba el contador de la campana con números de la
+ * empresa: globo rojo y, al abrirla, la lista de transportista vacía.
+ */
 const subs = new Map<string, Set<Ctrl>>();
 const enc = new TextEncoder();
 
-export function sseSubscribe(userId: string, ctrl: Ctrl) {
-  if (!subs.has(userId)) subs.set(userId, new Set());
-  subs.get(userId)!.add(ctrl);
+const canal = (userId: string, vista: Vista) => `${userId}:${vista}`;
+
+export function sseSubscribe(userId: string, vista: Vista, ctrl: Ctrl) {
+  const key = canal(userId, vista);
+  if (!subs.has(key)) subs.set(key, new Set());
+  subs.get(key)!.add(ctrl);
 }
 
-export function sseUnsubscribe(userId: string, ctrl: Ctrl) {
-  const s = subs.get(userId);
+export function sseUnsubscribe(userId: string, vista: Vista, ctrl: Ctrl) {
+  const key = canal(userId, vista);
+  const s = subs.get(key);
   if (!s) return;
   s.delete(ctrl);
-  if (s.size === 0) subs.delete(userId);
+  if (s.size === 0) subs.delete(key);
 }
 
-function ssePush(userId: string, data: unknown) {
-  const s = subs.get(userId);
+function ssePush(userId: string, vista: Vista, data: unknown) {
+  const s = subs.get(canal(userId, vista));
   if (!s?.size) return;
   const chunk = enc.encode(`event: update\ndata: ${JSON.stringify(data)}\n\n`);
   for (const ctrl of [...s]) {
@@ -111,44 +124,52 @@ export async function notifyTransportista(userId: string, extra?: Record<string,
     `priv:${privadas}`,
     `msj:${mensajesNoLeidos}`,
   ].join(",");
-  ssePush(userId, { count, privCount: privadas, hash, perfilIncompleto: incompleto, mensajesNoLeidos, ...extra });
+  ssePush(userId, "transportista", { count, privCount: privadas, hash, perfilIncompleto: incompleto, mensajesNoLeidos, ...extra });
+  // Solo existe si es cuenta dual con el lado empresa abierto: le refresca el
+  // badge del switcher sin tocar la campana de ese lado.
+  ssePush(userId, "empresa", { otroRolPendiente: count + privadas + mensajesNoLeidos });
 }
 
 export async function notifyEmpresa(userId: string, extra?: Record<string, unknown>) {
-  const [enConfirmacion, postulacionesNuevas, incompleto, mensajesNoLeidos] = await Promise.all([
+  const [enConfirmacion, postulacionesNuevas, disponiblesNuevos, incompleto, mensajesNoLeidos] = await Promise.all([
     db.carga.count({ where: { empresaId: userId, estado: "EN_CONFIRMACION" } }),
     db.postulacion.count({
       where: { carga: { empresaId: userId }, estado: "PENDIENTE", vistaEmpresa: false },
     }),
+    countDisponibilidadesNuevas(userId),
     perfilIncompleto(userId),
     countMensajesNoLeidos(userId, "empresa"),
   ]);
   const hash = [`conf:${enConfirmacion}`, `post:${postulacionesNuevas}`, `msj:${mensajesNoLeidos}`].join(",");
-  ssePush(userId, {
+  ssePush(userId, "empresa", {
     // `count` es solo lo que el usuario puede marcar como visto. Las cargas
     // EN_CONFIRMACION son una acción pendiente: se van cuando confirma el
     // viaje, no cuando mira la campana. Sumarlas acá dejaba un badge rojo que
     // "Marcar todas como vistas" no podía limpiar nunca, y el usuario aprendía
     // a ignorarlo.
-    count: postulacionesNuevas,
+    count: postulacionesNuevas + disponiblesNuevos,
     accionesPendientes: enConfirmacion,
     hash,
     perfilIncompleto: incompleto,
     mensajesNoLeidos,
     ...extra,
   });
+  ssePush(userId, "transportista", {
+    otroRolPendiente: enConfirmacion + postulacionesNuevas + disponiblesNuevos + mensajesNoLeidos,
+  });
 }
 
 /** Total de pendientes del lado empresa, para el badge del switcher de rol en cuentas duales. */
 export async function totalPendienteEmpresa(userId: string): Promise<number> {
-  const [enConfirmacion, postulacionesNuevas, mensajesNoLeidos] = await Promise.all([
+  const [enConfirmacion, postulacionesNuevas, disponiblesNuevos, mensajesNoLeidos] = await Promise.all([
     db.carga.count({ where: { empresaId: userId, estado: "EN_CONFIRMACION" } }),
     db.postulacion.count({
       where: { carga: { empresaId: userId }, estado: "PENDIENTE", vistaEmpresa: false },
     }),
+    countDisponibilidadesNuevas(userId),
     countMensajesNoLeidos(userId, "empresa"),
   ]);
-  return enConfirmacion + postulacionesNuevas + mensajesNoLeidos;
+  return enConfirmacion + postulacionesNuevas + disponiblesNuevos + mensajesNoLeidos;
 }
 
 /** Total de pendientes del lado transportista, para el badge del switcher de rol en cuentas duales. */

@@ -56,7 +56,8 @@ export default async function CuentaEmpresaPage() {
             notifZonaLat={user.notifZonaLat}
             notifZonaLng={user.notifZonaLng}
             notifRadioKm={user.notifRadioKm}
-            showNotificaciones={false}
+            avisosDe="transportistas"
+            zonaCompartida={session.role === "EMPRESA_TRANSPORTISTA"}
           />
         </div>
       </main>

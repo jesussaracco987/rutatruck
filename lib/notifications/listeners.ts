@@ -1,8 +1,13 @@
 import { after } from "next/server";
 import { onUnaVez } from "@/lib/events/bus";
-import { sendPushToTransportistasCercanos, sendPushToUser } from "@/lib/push";
+import {
+  sendPushToEmpresasCercanas,
+  sendPushToTransportistasCercanos,
+  sendPushToUser,
+} from "@/lib/push";
 import { notifyEmpresa, notifyTransportista } from "@/lib/sse";
 import { DIAS_EN_CONFIRMACION_ABANDONADA } from "@/lib/plazos";
+import { getVehiculoLabel } from "@/lib/vehiculos";
 
 /**
  * Los listeners disparan trabajo async (push + SSE) sin bloquear la respuesta
@@ -152,7 +157,26 @@ onUnaVez("postulacion.vista_empresa", ({ empresaId }) => {
   after(() => notifyEmpresa(empresaId).catch(() => {}));
 });
 
-onUnaVez("oferta-privada.creada", ({ transportistaId, cargaId, titulo }) => {
+onUnaVez("disponibilidad.activada", ({ transportistaId, vehiculo, zona, lat, lng, radioKm, disponibleHoy }) => {
+  // Sin notifyEmpresa() a cada empresa: serían N recálculos por un solo
+  // evento. El contador de la campana se pone al día solo en el próximo
+  // tick de 10s de cada stream abierto (app/api/events/route.ts).
+  after(() =>
+    sendPushToEmpresasCercanas(
+      {
+        title: disponibleHoy ? "Transportista disponible hoy" : "Nuevo transportista disponible",
+        body: `${getVehiculoLabel(vehiculo)} en ${zona}`,
+        url: "/empresa/transportistas",
+      },
+      lat,
+      lng,
+      radioKm,
+      transportistaId,
+    ).catch(() => {}),
+  );
+});
+
+onUnaVez("oferta-privada.creada",({ transportistaId, cargaId, titulo }) => {
   after(async () => {
     await Promise.allSettled([
       sendPushToUser(transportistaId, {
