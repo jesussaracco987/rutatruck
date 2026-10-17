@@ -15,7 +15,7 @@ export const FREE_TIER_DIAS = 60;
  * con el próximo deploy (antes era la variable de entorno `FREE_TIER_FIN`).
  * `null` oculta el contador.
  */
-const FIN_FREE_TIER: string | null = "2026-12-06T00:00:00-03:00";
+const FIN_FREE_TIER: string | null = "2026-12-16T00:00:00-03:00";
 
 export function finFreeTier(): Date | null {
   if (!FIN_FREE_TIER) return null;

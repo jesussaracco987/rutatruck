@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import LocationAutocomplete, { type LocationSelection } from "@/app/(empresa)/empresa/cargas/nueva/_components/LocationAutocomplete";
 import { useRouter } from "next/navigation";
+import { radiosConActual } from "@/lib/radios";
 
 const VEHICULO_BASE = [
   { value: "tolva_cerealera", label: "Tolva cerealera", emoji: "🌾", hasVariant: true },
@@ -53,13 +54,6 @@ function parseVehiculoInit(v: string): { base: string; variant: string } {
   if (v === "camion_acoplado_escalable") return { base: "chasis_acoplado", variant: "escalable" };
   return { base: "", variant: "" };
 }
-
-const RADIOS = [
-  { value: 20, label: "20 km" },
-  { value: 50, label: "50 km" },
-  { value: 100, label: "100 km" },
-  { value: null, label: "Sin límite" },
-];
 
 type Disponibilidad = {
   id: number;
@@ -298,7 +292,7 @@ export default function DisponibilidadForm({ inicial, vigenteInicial = false }: 
       <div>
         <span style={labelStyle}>Radio de trabajo</span>
         <div className="flex gap-2 flex-wrap">
-          {RADIOS.map((r) => (
+          {radiosConActual(inicial?.radioKm ?? 50).map((r) => (
             <button
               key={String(r.value)}
               type="button"

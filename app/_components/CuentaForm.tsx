@@ -6,13 +6,7 @@ import LocationAutocomplete, {
   type LocationSelection,
 } from "@/app/(empresa)/empresa/cargas/nueva/_components/LocationAutocomplete";
 import VerificarEmailBanner from "@/app/_components/VerificarEmailBanner";
-
-const RADIOS = [
-  { value: 20, label: "20 km" },
-  { value: 50, label: "50 km" },
-  { value: 100, label: "100 km" },
-  { value: null, label: "Sin límite" },
-];
+import { radiosConActual } from "@/lib/radios";
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -218,7 +212,7 @@ export default function CuentaForm({
             <div>
               <span style={labelStyle}>Radio</span>
               <div className="flex gap-2 flex-wrap">
-                {RADIOS.map((r) => (
+                {radiosConActual(notifRadioKm).map((r) => (
                   <button
                     key={String(r.value)}
                     type="button"

@@ -49,43 +49,52 @@ export default async function LandingPage() {
       style={{ backgroundColor: "#060F0F" }}
     >
       <JsonLd />
-      {/* Phone-width container */}
+      {/* Celular: columna angosta (imagen arriba, botones abajo).
+          Escritorio (lg): pantalla partida, imagen a la izquierda y panel a la derecha. */}
       <div
-        className="relative w-full sm:max-w-[420px] flex flex-col overflow-hidden"
+        className="relative w-full sm:max-w-[420px] lg:max-w-none flex flex-col lg:flex-row overflow-hidden"
         style={{ minHeight: "100svh" }}
       >
-        {/* Image section — upper portion only */}
-        <div className="relative flex-shrink-0 overflow-hidden" style={{ height: "56svh" }}>
+        {/* Image section */}
+        <div className="relative flex-shrink-0 overflow-hidden h-[56svh] lg:h-auto lg:min-h-screen lg:w-1/2 xl:w-[55%]">
           <Image
             src={truckImg}
             alt=""
             fill
-            className="object-cover"
-            style={{ objectPosition: "center 45%" }}
+            sizes="(min-width: 1280px) 55vw, (min-width: 1024px) 50vw, 420px"
+            className="object-cover object-[center_45%] lg:object-[center_60%]"
             priority
             quality={88}
           />
           {/* Overlay: dark top for logo, clear middle for truck, dark fade to bottom */}
           <div
-            className="absolute inset-0"
+            className="absolute inset-0 lg:hidden"
             style={{
               background:
                 "linear-gradient(to bottom, rgba(6,15,15,0.1) 20%, rgba(0,0,0,0.0) 85%, rgba(6,15,15,0.88) 95%, rgba(6,15,15,1) 100%)",
             }}
           />
+          {/* En escritorio la imagen se funde hacia el panel de la derecha */}
+          <div
+            className="absolute inset-0 hidden lg:block"
+            style={{
+              background:
+                "linear-gradient(to right, rgba(6,15,15,0) 70%, rgba(6,15,15,0.85) 94%, rgba(6,15,15,1) 100%)",
+            }}
+          />
 
           {/* Logo — top center */}
-          <div className="absolute top-8 left-0 right-0 flex flex-col items-center">
+          <div className="absolute top-8 lg:top-14 left-0 right-0 flex flex-col items-center">
             <h1
-              className="font-black leading-none mb-1"
-              style={{ fontSize: "2.6rem", letterSpacing: "-0.01em", textShadow: "0 2px 12px rgba(0,0,0,0.9), 0 0 30px rgba(0,0,0,0.7)" }}
+              className="font-black leading-none mb-1 text-[2.6rem] lg:text-6xl"
+              style={{ letterSpacing: "-0.01em", textShadow: "0 2px 12px rgba(0,0,0,0.9), 0 0 30px rgba(0,0,0,0.7)" }}
             >
               <span style={{ color: "#4ADE80" }}>CLICK</span>
               <span className="text-white">CARGO</span>
             </h1>
             <p
-              className="uppercase tracking-widest font-medium"
-              style={{ fontSize: "0.65rem", color: "#4ADE80", opacity: 0.9, textShadow: "0 1px 8px rgba(0,0,0,0.9)" }}
+              className="uppercase tracking-widest font-medium text-[0.65rem] lg:text-sm"
+              style={{ color: "#4ADE80", opacity: 0.9, textShadow: "0 1px 8px rgba(0,0,0,0.9)" }}
             >
               Red integral de cargas
             </p>
@@ -94,12 +103,40 @@ export default async function LandingPage() {
 
         {/* Dark section — buttons */}
         <div
-          className="flex flex-col justify-center flex-1 px-6 py-8 gap-3"
+          className="flex flex-col justify-center flex-1 px-6 py-8 lg:px-16 xl:px-24"
           style={{ backgroundColor: "#060F0F" }}
         >
+          <div className="w-full lg:max-w-md lg:mx-auto flex flex-col gap-3">
+          {/* Solo escritorio: en la PC sobra lugar para explicar qué es antes de elegir */}
+          <div className="hidden lg:block mb-6">
+            <h2 className="text-4xl font-black leading-tight text-white">
+              Cargas y camiones, <span style={{ color: "#4ADE80" }}>conectados</span>.
+            </h2>
+            <p className="mt-4 text-base leading-relaxed" style={{ color: "#9CA3AF" }}>
+              Empresas que necesitan transporte y transportistas de todo el país, en un solo lugar.
+            </p>
+            <ul className="mt-6 space-y-3 text-sm" style={{ color: "#D1D5DB" }}>
+              {[
+                "Publicá tu carga y recibí postulaciones de transportistas",
+                "Encontrá viajes cerca, con avisos por zona",
+                "Chat directo para coordinar sin intermediarios",
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-3">
+                  <svg className="w-5 h-5 flex-shrink-0 mt-px" fill="none" stroke="#4ADE80" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-8 text-xs font-semibold uppercase tracking-wider" style={{ color: "#6B7280" }}>
+              Elegí cómo querés usar ClickCargo
+            </p>
+          </div>
+
           <Link
             href="/registro?rol=transportista"
-            className="flex items-center gap-4 w-full px-5 py-4 rounded-2xl font-bold text-sm tracking-wide transition-opacity active:opacity-80"
+            className="flex items-center gap-4 w-full px-5 py-4 rounded-2xl font-bold text-sm tracking-wide transition-opacity hover:opacity-90 active:opacity-80 lg:py-5 lg:text-base"
             style={{ backgroundColor: "rgba(255,255,255,0.93)", color: "#060F0F" }}
           >
             <span
@@ -116,7 +153,7 @@ export default async function LandingPage() {
 
           <Link
             href="/registro?rol=empresa"
-            className="flex items-center gap-4 w-full px-5 py-4 rounded-2xl font-bold text-sm tracking-wide border transition-opacity active:opacity-80"
+            className="flex items-center gap-4 w-full px-5 py-4 rounded-2xl font-bold text-sm tracking-wide border transition-colors hover:border-white/40 active:opacity-80 lg:py-5 lg:text-base"
             style={{
               backgroundColor: "rgba(255,255,255,0.06)",
               color: "white",
@@ -170,6 +207,7 @@ export default async function LandingPage() {
             {" · "}
             <Link href="/politica-de-privacidad">Privacidad</Link>
           </p>
+          </div>
         </div>
       </div>
     </div>

@@ -8,6 +8,7 @@ import PurgeAuthedPush from "@/app/_components/PurgeAuthedPush";
 import { signup } from "@/app/actions/auth";
 import type { FormState } from "@/app/actions/auth";
 import LocationAutocomplete from "@/app/(empresa)/empresa/cargas/nueva/_components/LocationAutocomplete";
+import { RADIOS } from "@/lib/radios";
 
 export default function RegistroPage({
   searchParams,
@@ -194,12 +195,7 @@ export default function RegistroPage({
                     <input type="hidden" name="notifZonaLng" value={notifZonaLng} />
 
                     <div className="grid grid-cols-2 gap-2">
-                      {[
-                        { label: "50 km", value: "50" },
-                        { label: "100 km", value: "100" },
-                        { label: "200 km", value: "200" },
-                        { label: "Todo el país", value: "" },
-                      ].map(({ label, value }) => (
+                      {RADIOS.map((r) => ({ label: r.label, value: r.value === null ? "" : String(r.value) })).map(({ label, value }) => (
                         <label key={value} className="flex items-center gap-2 cursor-pointer select-none">
                           <input
                             type="radio"
