@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import iconImg from "@/app/assets/icon-bg-transparent.png";
+import { playStoreIntentUrl } from "@/lib/site";
 
 export default function DescargarPage() {
   const [appUrl, setAppUrl] = useState<string | null>(null);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isIOS, setIsIOS] = useState(false);
+  const [playStoreHref, setPlayStoreHref] = useState<string | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [installing, setInstalling] = useState(false);
 
@@ -26,6 +28,20 @@ export default function DescargarPage() {
     const ua = window.navigator.userAgent;
     if (/iPhone|iPad|iPod/.test(ua)) {
       setIsIOS(true);
+      return;
+    }
+
+    // En Android se instala desde Play Store. Los utm_* del link (ej. el de la
+    // bio de Instagram) pasan al referrer para verlos en Play Console.
+    if (/Android/.test(ua)) {
+      const params = new URLSearchParams(window.location.search);
+      setPlayStoreHref(
+        playStoreIntentUrl({
+          source: params.get("utm_source") || "web",
+          medium: params.get("utm_medium") || "descargar",
+          campaign: params.get("utm_campaign") || undefined,
+        })
+      );
       return;
     }
 
@@ -134,6 +150,14 @@ export default function DescargarPage() {
               2. Elegí <strong style={{ color: "#ffffff" }}>Agregar a pantalla de inicio</strong>
             </p>
           </div>
+        ) : playStoreHref ? (
+          <a
+            href={playStoreHref}
+            className="w-full font-bold rounded-xl py-3.5 transition-opacity text-sm tracking-wide active:opacity-80"
+            style={{ backgroundColor: "rgba(255,255,255,0.93)", color: "#060F0F" }}
+          >
+            DESCARGAR EN PLAY STORE
+          </a>
         ) : deferredPrompt ? (
           <button
             onClick={handleInstall}
