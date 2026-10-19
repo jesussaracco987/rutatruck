@@ -27,13 +27,34 @@ export function absoluteUrl(path: string): string | undefined {
  * (Estadísticas → Adquisición de usuarios). El parámetro `referrer` va con los
  * utm_* codificados adentro, como lo pide Google Play.
  */
-export function playStoreUrl(utm: { source: string; medium: string; campaign?: string }): string {
+export function playStoreUrl(utm: PlayStoreUtm): string {
+  return `${PLAY_STORE_URL}&referrer=${playStoreReferrer(utm)}`;
+}
+
+/**
+ * Igual que `playStoreUrl`, pero como intent de Android: abre la app de Play
+ * Store aunque el link se toque dentro del navegador de Instagram o Facebook,
+ * que con el link https se quedan en la versión web. Si no hay Play Store,
+ * cae en el link https.
+ */
+export function playStoreIntentUrl(utm: PlayStoreUtm): string {
+  const id = new URL(PLAY_STORE_URL).searchParams.get("id");
+  const fallback = encodeURIComponent(playStoreUrl(utm));
+  return (
+    `intent://details?id=${id}&referrer=${playStoreReferrer(utm)}` +
+    `#Intent;scheme=market;package=com.android.vending;S.browser_fallback_url=${fallback};end`
+  );
+}
+
+type PlayStoreUtm = { source: string; medium: string; campaign?: string };
+
+function playStoreReferrer(utm: PlayStoreUtm): string {
   const referrer = new URLSearchParams({
     utm_source: utm.source,
     utm_medium: utm.medium,
     ...(utm.campaign ? { utm_campaign: utm.campaign } : {}),
   });
-  return `${PLAY_STORE_URL}&referrer=${encodeURIComponent(referrer.toString())}`;
+  return encodeURIComponent(referrer.toString());
 }
 
 /**
