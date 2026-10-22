@@ -138,6 +138,19 @@ export async function publicarCargaConPago(
   return { ok: true, url };
 }
 
+/**
+ * Publica directo durante el período gratis, o deja la carga pendiente y
+ * devuelve el link de pago de MercadoPago.
+ */
+export async function publicarCarga(
+  cargaData: CargaData,
+  origin: string,
+): Promise<PublicarCargaFreeTierResult | PublicarCargaConPagoResult> {
+  return FREE_TIER
+    ? publicarCargaFreeTier(cargaData)
+    : publicarCargaConPago(cargaData, origin);
+}
+
 export type ResponderOfertaPrivadaResult =
   | { ok: true }
   | { ok: false; status: number; error: string };

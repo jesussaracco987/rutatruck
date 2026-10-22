@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/dal";
 import { isEmpresa } from "@/lib/roles";
-import { publicarCargaFreeTier, publicarCargaConPago } from "@/lib/services/carga.service";
-
-const FREE_TIER = process.env.FREE_TIER === "true";
+import { parseCargaInput } from "@/lib/carga-input";
+import { publicarCarga } from "@/lib/services/carga.service";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -24,88 +23,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Body inválido" }, { status: 400 });
   }
 
-  const {
-    origen,
-    origenLat,
-    origenLng,
-    destino,
-    destinoLat,
-    destinoLng,
-    tipoCarga,
-    tipoCargaDetalle,
-    peso,
-    pesoUnidad,
-    volumen,
-    cantidadCamiones,
-    presupuesto,
-    fechaCarga,
-    fechaCupo,
-    preferenciaCamion,
-    descripcion,
-    contactoNombre,
-    contactoTelefono,
-    contactoEmail,
-  } = body as Record<string, string>;
-
-  if (
-    !origen ||
-    !destino ||
-    !tipoCarga ||
-    !fechaCarga ||
-    !contactoNombre ||
-    !contactoTelefono ||
-    !contactoEmail
-  ) {
-    return NextResponse.json(
-      { error: "Faltan campos requeridos" },
-      { status: 400 },
-    );
-  }
-
-  if (fechaCupo && new Date(fechaCupo) < new Date(fechaCarga)) {
-    return NextResponse.json(
-      { error: "La fecha de cupo no puede ser anterior a la fecha de carga" },
-      { status: 400 },
-    );
-  }
-
-  const cargaData = {
-    titulo: `${origen} → ${destino}`,
-    origen,
-    origenLat: origenLat ? parseFloat(origenLat as string) : null,
-    origenLng: origenLng ? parseFloat(origenLng as string) : null,
-    destino,
-    destinoLat: destinoLat ? parseFloat(destinoLat as string) : null,
-    destinoLng: destinoLng ? parseFloat(destinoLng as string) : null,
-    tipoCarga,
-    tipoCargaDetalle: tipoCargaDetalle || null,
-    peso: peso ? parseFloat(peso) : null,
-    pesoUnidad: pesoUnidad || null,
-    volumen: volumen ? parseFloat(volumen) : null,
-    cantidadCamiones: cantidadCamiones ? Math.max(1, parseInt(cantidadCamiones)) : 1,
-    presupuesto: presupuesto ? parseFloat(presupuesto) : null,
-    fechaCarga: new Date(fechaCarga),
-    fechaCupo: fechaCupo ? new Date(fechaCupo) : null,
-    preferenciaCamion: preferenciaCamion || null,
-    descripcion: descripcion || null,
-    contactoNombre,
-    contactoTelefono,
-    contactoEmail,
-    empresaId: session.userId,
-  };
-
-  if (FREE_TIER) {
-    const result = await publicarCargaFreeTier(cargaData);
-    if (!result.ok) {
-      return NextResponse.json({ error: result.error }, { status: result.status });
-    }
-    return NextResponse.json({ cargaId: result.cargaId }, { status: 201 });
+  const input = parseCargaInput(body);
+  if (!input.ok) {
+    return NextResponse.json({ error: input.error }, { status: 400 });
   }
 
   const origin = process.env.NEXTAUTH_URL ?? new URL(req.url).origin;
-  const result = await publicarCargaConPago(cargaData, origin);
+  const result = await publicarCarga({ ...input.data, empresaId: session.userId }, origin);
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
-  return NextResponse.json({ url: result.url }, { status: 201 });
+  return NextResponse.json(
+    "cargaId" in result ? { cargaId: result.cargaId } : { url: result.url },
+    { status: 201 },
+  );
 }

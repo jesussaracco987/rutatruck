@@ -2,12 +2,9 @@
 
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import { db } from "@/lib/db";
-import { ORIGEN_COOKIE, parseOrigen } from "@/lib/origen";
-import { registrarEvento } from "@/lib/analytics";
 import { createSession, deleteSession, type Role } from "@/lib/session";
-import { isValidEmail } from "@/lib/validate-email";
+import { crearCuenta } from "@/lib/services/cuenta.service";
 
 export type FormState = { error?: string } | undefined;
 
@@ -45,12 +42,6 @@ export async function signup(
   if (formData.get("aceptaTerminos") !== "on") {
     return { error: "Tenés que aceptar los Términos y la Política de Privacidad" };
   }
-  if (password.length < 6) {
-    return { error: "La contraseña debe tener al menos 6 caracteres" };
-  }
-  if (!(await isValidEmail(email))) {
-    return { error: "El email ingresado no existe o no es válido" };
-  }
 
   let role: Role;
   if (esEmpresa && esTransportista) {
@@ -61,37 +52,20 @@ export async function signup(
     role = esFlota ? "TRANSPORTISTA_FLOTA" : "TRANSPORTISTA";
   }
 
-  const existing = await db.user.findUnique({ where: { email } });
-  if (existing) return { error: "Ya existe una cuenta con ese email" };
-
-  const cookieStore = await cookies();
-  const origen = parseOrigen(cookieStore.get(ORIGEN_COOKIE)?.value);
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const user = await db.user.create({
-    data: {
-      name,
-      email,
-      password: hashedPassword,
-      role,
-      esFlota: esFlota && esTransportista,
-      terminosAceptadosEn: new Date(),
-      origenFuente: origen?.fuente,
-      origenMedio: origen?.medio,
-      origenCampania: origen?.campania,
-      origenContenido: origen?.contenido,
-      origenLanding: origen?.landing,
-      origenReferrer: origen?.referrer,
-      ...(esTransportista && notifZonaLat !== null && notifZonaLng !== null
+  const result = await crearCuenta({
+    name,
+    email,
+    password,
+    role,
+    esFlota: esFlota && esTransportista,
+    extra:
+      esTransportista && notifZonaLat !== null && notifZonaLng !== null
         ? { notifZonaLat, notifZonaLng, notifRadioKm }
-        : {}),
-    },
+        : undefined,
   });
+  if (!result.ok) return { error: result.error };
 
-  cookieStore.delete(ORIGEN_COOKIE);
-  await registrarEvento("sign_up", { rol: role });
-  await createSession(user.id, user.role as Role, user.esFlota);
-  redirect(dashboardByRole[user.role as Role]);
+  redirect(dashboardByRole[role]);
 }
 
 export async function login(

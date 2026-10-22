@@ -152,7 +152,7 @@ export default async function LandingPage() {
           </Link>
 
           <Link
-            href="/registro?rol=empresa"
+            href="/publicar"
             className="flex items-center gap-4 w-full px-5 py-4 rounded-2xl font-bold text-sm tracking-wide border transition-colors hover:border-white/40 active:opacity-80 lg:py-5 lg:text-base"
             style={{
               backgroundColor: "rgba(255,255,255,0.06)",

@@ -14,7 +14,7 @@ type Copy = {
   titulo: string;
   bajada: string;
   cta: string;
-  registroHref: string;
+  ctaHref: string;
   whatsappTexto: string;
   pasos: Item[];
   beneficiosTitulo: string;
@@ -30,7 +30,7 @@ const COPY: Record<LandingVariant, Copy> = {
     bajada:
       "Publicás el flete una sola vez y los transportistas de la zona se postulan. Elegís con quién viajar y coordinás por chat.",
     cta: "Publicar mi primera carga",
-    registroHref: "/registro?rol=empresa",
+    ctaHref: "/publicar",
     whatsappTexto: "Hola, tengo una empresa y quiero publicar cargas en ClickCargo.",
     pasos: [
       {
@@ -68,6 +68,11 @@ const COPY: Record<LandingVariant, Copy> = {
     gratisDetalle: "Publicá todas las cargas que necesites sin pagar nada y sin cargar tarjeta.",
     preguntas: [
       {
+        pregunta: "¿Tengo que registrarme antes?",
+        respuesta:
+          "No. Completás los datos de la carga y, al publicarla, se crea tu cuenta con tu email para que después veas las postulaciones.",
+      },
+      {
         pregunta: "¿Qué tipo de cargas puedo publicar?",
         respuesta:
           "La que necesites mover: desde un flete chico en utilitario hasta varios camiones completos. Al publicar indicás el tipo de carga, el peso, la fecha y, si querés, el camión que preferís.",
@@ -94,7 +99,7 @@ const COPY: Record<LandingVariant, Copy> = {
     bajada:
       "Mirá las cargas publicadas en tu zona, postulate desde el celular y arreglá directo con la empresa por chat.",
     cta: "Registrarme y ver cargas",
-    registroHref: "/registro?rol=transportista",
+    ctaHref: "/registro?rol=transportista",
     whatsappTexto: "Hola, soy transportista y quiero buscar cargas en ClickCargo.",
     pasos: [
       {
@@ -221,7 +226,7 @@ export default function Landing({ variant }: { variant: LandingVariant }) {
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row sm:items-center gap-3">
-              <BotonPrincipal href={copy.registroHref}>{copy.cta}</BotonPrincipal>
+              <BotonPrincipal href={copy.ctaHref}>{copy.cta}</BotonPrincipal>
               {whatsapp && (
                 <a
                   href={whatsapp}
@@ -361,7 +366,7 @@ export default function Landing({ variant }: { variant: LandingVariant }) {
               </p>
             )}
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-              <BotonPrincipal href={copy.registroHref}>{copy.cta}</BotonPrincipal>
+              <BotonPrincipal href={copy.ctaHref}>{copy.cta}</BotonPrincipal>
               <a
                 href={playStoreUrl({ source: "web", medium: "landing", campaign: `para-${variant}s` })}
                 target="_blank"

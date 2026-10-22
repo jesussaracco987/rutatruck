@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import LogoClickCargo from "@/app/_components/LogoClickCargo";
+import { enviarEvento } from "@/app/_components/Analytics";
 import LocationAutocomplete from "./LocationAutocomplete";
 import { TIPOS_CARGA, placeholderDetalleCarga } from "@/lib/tipos-carga";
 
@@ -66,15 +67,33 @@ export default function NuevaCargaForm({
   precioPublicacion,
   errorInicial,
   freeTier,
+  invitado = false,
 }: {
   contactoDefecto: ContactoDefecto;
   precioPublicacion: number;
   errorInicial?: string;
   freeTier?: boolean;
+  /**
+   * Publicación sin cuenta (`/publicar`): pide además contraseña y términos, y
+   * al publicar se crea la cuenta de empresa con los datos de contacto.
+   */
+  invitado?: boolean;
 }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(errorInicial ?? null);
+  const [emailExistente, setEmailExistente] = useState(false);
+  const [password, setPassword] = useState("");
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
+  const volverHref = invitado ? "/para-empresas" : "/empresa/dashboard";
+  // Embudo de /publicar: cuántos empiezan a cargar el flete sin cuenta. El
+  // final (sign_up + carga_publicada) lo registra el servidor.
+  const iniciado = useRef(false);
+  const alEmpezar = () => {
+    if (!invitado || iniciado.current) return;
+    iniciado.current = true;
+    enviarEvento("publicacion_iniciada");
+  };
   const [fields, setFields] = useState<Fields>(() =>
     makeDefaults(contactoDefecto),
   );
@@ -93,8 +112,12 @@ export default function NuevaCargaForm({
         const parsed = JSON.parse(saved) as Partial<Fields>;
         const hasMeaningful = MEANINGFUL_KEYS.some((k) => !!parsed[k]);
         if (hasMeaningful) {
-          const contactKeysToSkip: (keyof Fields)[] = ["contactoNombre", "contactoTelefono", "contactoEmail"];
-          contactKeysToSkip.forEach((k) => delete parsed[k]);
+          // Con cuenta, el contacto sale del perfil. Sin cuenta, lo que ya
+          // escribió es lo único que hay.
+          if (!invitado) {
+            const contactKeysToSkip: (keyof Fields)[] = ["contactoNombre", "contactoTelefono", "contactoEmail"];
+            contactKeysToSkip.forEach((k) => delete parsed[k]);
+          }
           setFields((f) => ({ ...f, ...parsed }));
           setHasDraft(true);
         } else {
@@ -103,7 +126,7 @@ export default function NuevaCargaForm({
       }
     } catch {}
     setDraftLoaded(true);
-  }, []);
+  }, [invitado]);
 
   useEffect(() => {
     if (!draftLoaded) return;
@@ -138,6 +161,7 @@ export default function NuevaCargaForm({
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    setEmailExistente(false);
     if (!fields.origen) { setError("Seleccioná el origen."); return; }
     if (!fields.destino) { setError("Seleccioná el destino."); return; }
     setPending(true);
@@ -147,21 +171,37 @@ export default function NuevaCargaForm({
 
     let navigating = false;
     try {
-      const res = await fetch("/api/cargas", {
+      const res = await fetch(invitado ? "/api/cargas/invitado" : "/api/cargas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...fields, presupuesto: presupuestoAcordar ? "" : fields.presupuesto }),
+        body: JSON.stringify({
+          ...fields,
+          presupuesto: presupuestoAcordar ? "" : fields.presupuesto,
+          ...(invitado ? { password, aceptaTerminos } : {}),
+        }),
         signal: controller.signal,
       });
       clearTimeout(timeout);
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Error al crear la carga");
+      if (!res.ok) {
+        if (data.emailExistente) setEmailExistente(true);
+        // Sin cuenta, la cuenta pudo crearse aunque la publicación falló: se
+        // reintenta desde el panel, que restaura el borrador.
+        if (data.cuentaCreada) {
+          navigating = true;
+          router.push("/empresa/cargas/nueva");
+        }
+        throw new Error(data.error ?? "Error al crear la carga");
+      }
 
       localStorage.removeItem(DRAFT_KEY);
       if (data.cargaId) {
         navigating = true;
-        router.push(`/empresa/cargas/${data.cargaId}`);
+        // Recién creada la cuenta, una carga completa levanta la sesión nueva
+        // en todo el layout (menú, notificaciones).
+        if (invitado) window.location.href = `/empresa/cargas/${data.cargaId}`;
+        else router.push(`/empresa/cargas/${data.cargaId}`);
       } else if (data.url) {
         navigating = true;
         window.location.href = data.url;
@@ -195,15 +235,20 @@ export default function NuevaCargaForm({
         className="px-6 py-4 flex items-center justify-between border-b"
         style={{ backgroundColor: "#0A1A1A", borderColor: "#E2E8E8" }}
       >
-        <Link href="/empresa/dashboard">
+        <Link href={invitado ? "/" : "/empresa/dashboard"}>
           <LogoClickCargo />
         </Link>
+        {invitado && (
+          <Link href="/login" className="text-sm font-semibold transition-opacity hover:opacity-80" style={{ color: "#FFFFFF" }}>
+            Ingresar
+          </Link>
+        )}
       </header>
 
       <main className="max-w-3xl mx-auto px-6 py-10">
         <div className="mb-8">
           <Link
-            href="/empresa/dashboard"
+            href={volverHref}
             className="inline-flex items-center gap-2 mb-4 font-semibold text-sm transition-colors hover:opacity-80"
             style={{ color: "var(--primary)" }}
           >
@@ -225,13 +270,15 @@ export default function NuevaCargaForm({
                 />
               </svg>
             </span>
-            Volver al panel
+            {invitado ? "Volver" : "Volver al panel"}
           </Link>
           <h1 className="text-3xl font-bold text-gray-900">
             Publicar nueva carga
           </h1>
           <p className="mt-1 text-sm" style={{ color: "#6B7280" }}>
-            {freeTier
+            {invitado
+              ? "No hace falta registrarse antes: completá la carga y con tus datos de contacto creamos tu cuenta al publicar."
+              : freeTier
               ? "Completá los datos del envío. La carga quedará visible para transportistas de inmediato."
               : "Completá los datos del envío. Una vez procesado el pago de publicación, la carga quedará visible para transportistas."}
           </p>
@@ -257,7 +304,7 @@ export default function NuevaCargaForm({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} onFocus={alEmpezar} className="space-y-6">
           <div
             className="rounded-xl border p-6 space-y-4"
             style={{ backgroundColor: "#FFFFFF", borderColor: "#E2E8E8" }}
@@ -595,11 +642,68 @@ export default function NuevaCargaForm({
                 />
               </div>
             </div>
+
+            {invitado && (
+              <>
+                <div>
+                  <label htmlFor="password" className={labelClass} style={labelStyle}>
+                    Elegí una contraseña *
+                  </label>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    required
+                    minLength={6}
+                    autoComplete="new-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className={inputClass}
+                    style={inputStyle}
+                    placeholder="Mínimo 6 caracteres"
+                  />
+                  <p className="mt-1 text-xs" style={{ color: "#6B7280" }}>
+                    Con tu email y esta contraseña entrás después a ver las postulaciones.
+                  </p>
+                </div>
+
+                {/* Links en pestaña nueva: navegar en la misma perdería lo ya cargado. */}
+                <label className="flex items-start gap-3 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    name="aceptaTerminos"
+                    required
+                    checked={aceptaTerminos}
+                    onChange={(e) => setAceptaTerminos(e.target.checked)}
+                    className="w-4 h-4 mt-0.5 rounded cursor-pointer flex-shrink-0"
+                  />
+                  <span className="text-sm" style={{ color: "#4B5563" }}>
+                    Acepto los{" "}
+                    <Link href="/terminos" target="_blank" className="font-semibold underline" style={{ color: "var(--primary)" }}>
+                      Términos y Condiciones
+                    </Link>{" "}
+                    y la{" "}
+                    <Link href="/politica-de-privacidad" target="_blank" className="font-semibold underline" style={{ color: "var(--primary)" }}>
+                      Política de Privacidad
+                    </Link>
+                  </span>
+                </label>
+              </>
+            )}
           </div>
 
           {error && (
             <p className="text-sm text-red-300 bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3">
               {error}
+              {emailExistente && (
+                <>
+                  {". "}
+                  <Link href="/login" className="font-semibold underline">
+                    Ingresá con tu cuenta
+                  </Link>{" "}
+                  y entrá a Publicar carga: lo que completaste te va a estar esperando.
+                </>
+              )}
             </p>
           )}
 
@@ -620,7 +724,7 @@ export default function NuevaCargaForm({
 
           <div className="flex items-center justify-end gap-4">
             <Link
-              href="/empresa/dashboard"
+              href={volverHref}
               className="text-sm transition-colors"
               style={{ color: "#6B7280" }}
             >
@@ -638,7 +742,7 @@ export default function NuevaCargaForm({
               {pending
                 ? "Procesando..."
                 : freeTier
-                  ? "Publicar carga →"
+                  ? invitado ? "Crear cuenta y publicar →" : "Publicar carga →"
                   : "Ir al pago →"}
             </button>
           </div>
