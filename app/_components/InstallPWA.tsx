@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { playStoreUrl } from "@/lib/site";
+import { enviarEvento } from "@/app/_components/Analytics";
 
 const DISMISSED_KEY = "pwa-dismissed-ts";
 const REDISPLAY_DAYS = 7;
@@ -77,6 +78,7 @@ export default function InstallPWA() {
     : isAndroid
       ? () => {
           dismiss();
+          enviarEvento("descarga_app", { pagina: window.location.pathname, origen: "banner_instalar" });
           window.location.href = playStoreUrl({ source: "web", medium: "banner_instalar" });
         }
       : handleInstall;

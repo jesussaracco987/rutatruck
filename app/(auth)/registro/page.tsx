@@ -1,7 +1,8 @@
 "use client";
 
-import { use, useActionState, useState } from "react";
+import { use, useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { enviarEvento } from "@/app/_components/Analytics";
 import LogoClickCargo from "@/app/_components/LogoClickCargo";
 import PurgeAuthedCache from "@/app/_components/PurgeAuthedCache";
 import PurgeAuthedPush from "@/app/_components/PurgeAuthedPush";
@@ -29,6 +30,18 @@ export default function RegistroPage({
   // ahí signup descarta la preferencia entera —exige lat y lng— y el usuario
   // termina recibiendo avisos de todo el país creyendo que los filtró.
   const radioSinZona = notifRadioKm !== "" && !notifZonaLat;
+
+  // Embudo: quién entra a /registro (page_view), quién empieza a completarlo y
+  // en qué validación se traba. El registro exitoso lo envía signup.
+  const iniciado = useRef(false);
+  const alEmpezar = () => {
+    if (iniciado.current) return;
+    iniciado.current = true;
+    enviarEvento("registro_iniciado", { rol: rol === "empresa" || rol === "transportista" ? rol : "sin_rol" });
+  };
+  useEffect(() => {
+    if (state?.error) enviarEvento("registro_error", { motivo: state.error });
+  }, [state]);
 
   const inputClass =
     "w-full rounded-xl border px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:border-transparent text-sm transition-colors";
@@ -58,7 +71,7 @@ export default function RegistroPage({
           Empezá gratis, sin tarjeta de crédito
         </p>
 
-        <form action={action} className="space-y-4">
+        <form action={action} onFocus={alEmpezar} className="space-y-4">
           <div>
             <label htmlFor="name" className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#9CA3AF" }}>
               Nombre completo / Empresa

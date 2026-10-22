@@ -32,9 +32,41 @@ const EVENTOS_META: Record<string, { nombre: string; estandar: boolean }> = {
   postulacion_enviada: { nombre: "SubmitApplication", estandar: true },
   carga_publicada: { nombre: "CargaPublicada", estandar: false },
   viaje_concretado: { nombre: "ViajeConcretado", estandar: false },
+  contacto_whatsapp: { nombre: "Contact", estandar: true },
+  descarga_app: { nombre: "DescargaApp", estandar: false },
+  registro_iniciado: { nombre: "RegistroIniciado", estandar: false },
+  publicacion_iniciada: { nombre: "PublicacionIniciada", estandar: false },
 };
 
 let iniciado = false;
+
+/**
+ * Envía un evento que ocurre en el navegador (clicks, formularios). Los pasos
+ * que se confirman en el servidor van por `registrarEvento` (lib/analytics.ts).
+ */
+export function enviarEvento(nombre: string, params: EventoAnalytics["params"] = {}) {
+  if (GA_ID) gtag("event", nombre, params);
+
+  const meta = EVENTOS_META[nombre];
+  if (PIXEL_ID && meta) {
+    window.fbq?.(meta.estandar ? "track" : "trackCustom", meta.nombre, params);
+  }
+}
+
+// Los links que sacan al usuario del sitio (WhatsApp, Play Store) son
+// conversiones que de otro modo no quedan registradas en ningún lado.
+function eventoDeLink(href: string): string | null {
+  if (href.startsWith("https://wa.me/")) return "contacto_whatsapp";
+  if (href.startsWith("https://play.google.com/")) return "descarga_app";
+  return null;
+}
+
+function alHacerClick(e: MouseEvent) {
+  const link = (e.target as Element | null)?.closest?.("a[href]");
+  if (!(link instanceof HTMLAnchorElement)) return;
+  const nombre = eventoDeLink(link.href);
+  if (nombre) enviarEvento(nombre, { pagina: window.location.pathname });
+}
 
 /** Envía los eventos que el servidor dejó anotados (ver lib/analytics.ts). */
 function despacharEventos() {
@@ -50,15 +82,7 @@ function despacharEventos() {
 
   try {
     const eventos: EventoAnalytics[] = JSON.parse(decodeURIComponent(cookie.slice(prefijo.length)));
-    for (const evento of eventos) {
-      const params = evento.params ?? {};
-      if (GA_ID) gtag("event", evento.nombre, params);
-
-      const meta = EVENTOS_META[evento.nombre];
-      if (PIXEL_ID && meta) {
-        window.fbq?.(meta.estandar ? "track" : "trackCustom", meta.nombre, params);
-      }
-    }
+    for (const evento of eventos) enviarEvento(evento.nombre, evento.params);
   } catch {}
 }
 
@@ -80,6 +104,13 @@ export default function Analytics() {
     const id = setInterval(despacharEventos, 3000);
     return () => clearInterval(id);
   }, [pathname]);
+
+  useEffect(() => {
+    if (!GA_ID && !PIXEL_ID) return;
+    // Captura: el click se registra aunque el link abra otra pestaña o la app.
+    document.addEventListener("click", alHacerClick, true);
+    return () => document.removeEventListener("click", alHacerClick, true);
+  }, []);
 
   return (
     <>
