@@ -19,7 +19,11 @@ export default async function proxy(req: NextRequest) {
   const isAuthRoute = pathname === "/login" || pathname === "/registro";
 
   if (isProtected && !session) {
-    return NextResponse.redirect(new URL("/login", req.nextUrl));
+    // Quien llega desde un link (ej. el email de una postulación) vuelve ahí
+    // después de ingresar, en vez de caer en el panel.
+    const login = new URL("/login", req.nextUrl);
+    login.searchParams.set("volver", pathname + req.nextUrl.search);
+    return NextResponse.redirect(login);
   }
 
   if (pathname.startsWith("/admin") && session?.role !== "ADMIN") {

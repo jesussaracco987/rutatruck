@@ -38,6 +38,7 @@ export default function EditarCargaPanel({ carga, sinTransportista }: { carga: C
   const [error, setError] = useState<string | null>(null);
   const [presupuestoAcordar, setPresupuestoAcordar] = useState(carga.presupuesto === null);
   const [fechaCarga, setFechaCarga] = useState(carga.fechaCarga);
+  const [tipoCarga, setTipoCarga] = useState(carga.tipoCarga);
   const fechaCupoRef = useRef<HTMLInputElement>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -162,25 +163,6 @@ export default function EditarCargaPanel({ carga, sinTransportista }: { carga: C
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="edit-cantidadCamiones" className={labelClass} style={labelStyle}>
-              ¿Cuántos camiones necesitás? *
-            </label>
-            <input
-              id="edit-cantidadCamiones"
-              name="cantidadCamiones"
-              type="number"
-              required
-              min="1"
-              step="1"
-              defaultValue={carga.cantidadCamiones}
-              className={inputClass}
-              style={inputStyle}
-            />
-          </div>
-        </div>
-
         <div>
           <label
             htmlFor="edit-tipoCarga"
@@ -193,7 +175,8 @@ export default function EditarCargaPanel({ carga, sinTransportista }: { carga: C
             id="edit-tipoCarga"
             name="tipoCarga"
             required
-            defaultValue={carga.tipoCarga}
+            value={tipoCarga}
+            onChange={(e) => setTipoCarga(e.target.value)}
             className={inputClass}
             style={inputStyle}
           >
@@ -203,6 +186,64 @@ export default function EditarCargaPanel({ carga, sinTransportista }: { carga: C
               </option>
             ))}
           </select>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {tipoCarga === "paqueteria" ? (
+            // Un paquete viaja en un solo vehículo.
+            <input type="hidden" name="cantidadCamiones" value="1" />
+          ) : (
+            <div>
+              <label htmlFor="edit-cantidadCamiones" className={labelClass} style={labelStyle}>
+                ¿Cuántos camiones necesitás? *
+              </label>
+              <input
+                id="edit-cantidadCamiones"
+                name="cantidadCamiones"
+                type="number"
+                required
+                min="1"
+                step="1"
+                defaultValue={carga.cantidadCamiones}
+                className={inputClass}
+                style={inputStyle}
+              />
+            </div>
+          )}
+          <div>
+            <label
+              htmlFor="edit-peso"
+              className={labelClass}
+              style={labelStyle}
+            >
+              Peso estimado{" "}
+              <span className="text-xs" style={{ color: "#6B7280" }}>
+                (opcional)
+              </span>
+            </label>
+            <div className="flex gap-2">
+              <input
+                id="edit-peso"
+                name="peso"
+                type="number"
+                step="0.1"
+                min="0"
+                defaultValue={carga.peso ?? ""}
+                className={inputClass}
+                style={inputStyle}
+              />
+              <select
+                name="pesoUnidad"
+                defaultValue={carga.pesoUnidad ?? (carga.tipoCarga === "paqueteria" ? "kg" : "tonelada")}
+                className={inputClass}
+                style={{ ...inputStyle, minWidth: "120px", width: "auto" }}
+              >
+                <option value="tonelada">Tonelada</option>
+                <option value="kg">kg</option>
+                <option value="bulto">Bulto</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         {sinTransportista && (

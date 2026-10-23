@@ -237,7 +237,7 @@ export default function CuentaForm({
         </p>
         {zonaCompartida && (
           <p className="text-xs mt-1.5" style={{ color: "#9CA3AF" }}>
-            La zona es la misma para tu perfil empresa y transportista: aplica tanto a avisos de cargas como de transportistas.
+            La zona es la misma para tu perfil de cliente y de transportista: aplica tanto a avisos de cargas como de transportistas.
           </p>
         )}
       </div>

@@ -9,6 +9,13 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      // La landing de quien envía se llamaba "para empresas". Los links viejos
+      // (bio de Instagram, campañas) siguen andando y conservan sus UTM.
+      { source: "/para-empresas", destination: "/enviar", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

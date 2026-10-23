@@ -26,12 +26,12 @@ type Copy = {
 
 const COPY: Record<LandingVariant, Copy> = {
   empresa: {
-    titulo: "Conseguí camión para tu carga sin llamar a medio mundo",
+    titulo: "Conseguí transporte para tu envío sin llamar a medio mundo",
     bajada:
       "Publicás el flete una sola vez y los transportistas de la zona se postulan. Elegís con quién viajar y coordinás por chat.",
     cta: "Publicar mi primera carga",
     ctaHref: "/publicar",
-    whatsappTexto: "Hola, tengo una empresa y quiero publicar cargas en ClickCargo.",
+    whatsappTexto: "Hola, necesito enviar una carga y quiero publicarla en ClickCargo.",
     pasos: [
       {
         titulo: "Publicá la carga",
@@ -97,14 +97,14 @@ const COPY: Record<LandingVariant, Copy> = {
   transportista: {
     titulo: "Cargas cerca tuyo, para no volver vacío",
     bajada:
-      "Mirá las cargas publicadas en tu zona, postulate desde el celular y arreglá directo con la empresa por chat.",
+      "Mirá las cargas publicadas en tu zona, postulate desde el celular y arreglá directo con el cliente por chat.",
     cta: "Registrarme y ver cargas",
     ctaHref: "/registro?rol=transportista",
     whatsappTexto: "Hola, soy transportista y quiero buscar cargas en ClickCargo.",
     pasos: [
       {
         titulo: "Creá tu cuenta",
-        detalle: "Con un camión o con flota. Elegís tu zona y hasta qué distancia querés recibir avisos.",
+        detalle: "Con un vehículo o con flota. Elegís tu zona y hasta qué distancia querés recibir avisos.",
       },
       {
         titulo: "Recibí avisos de cargas",
@@ -112,7 +112,7 @@ const COPY: Record<LandingVariant, Copy> = {
       },
       {
         titulo: "Postulate y coordiná",
-        detalle: "Te postulás desde el celular y cerrás los detalles por chat con la empresa.",
+        detalle: "Te postulás desde el celular y cerrás los detalles por chat con el cliente.",
       },
     ],
     beneficiosTitulo: "Pensada para quien maneja",
@@ -131,7 +131,7 @@ const COPY: Record<LandingVariant, Copy> = {
       },
       {
         titulo: "Tu reputación suma",
-        detalle: "Cada viaje terminado deja una reseña que las empresas ven al elegir.",
+        detalle: "Cada viaje terminado deja una reseña que los clientes ven al elegir.",
       },
     ],
     gratisDetalle: "Postulate a todas las cargas que quieras, sin comisión y sin cargar tarjeta.",
@@ -153,9 +153,9 @@ const COPY: Record<LandingVariant, Copy> = {
       },
     ],
     otra: {
-      texto: "¿Tenés una empresa y necesitás transporte?",
-      link: "Mirá ClickCargo para empresas",
-      href: "/para-empresas",
+      texto: "¿Necesitás enviar una carga?",
+      link: "Mirá cómo enviar con ClickCargo",
+      href: "/enviar",
     },
   },
 };

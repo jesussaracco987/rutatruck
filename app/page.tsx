@@ -12,7 +12,7 @@ import type { Metadata } from "next";
 // Es lo que aparece cuando alguien busca "ClickCargo" en Google.
 const title = "ClickCargo: cargas y camiones conectados";
 const description =
-  "Conectamos empresas que necesitan transporte con transportistas de todo el país. Publicá tu carga o encontrá viajes cerca, con avisos por zona y chat directo.";
+  "Conectamos a quien necesita enviar una carga con transportistas de todo el país. Publicá tu carga o encontrá viajes cerca, con avisos por zona y chat directo.";
 
 export const metadata: Metadata = {
   title,
@@ -113,7 +113,7 @@ export default async function LandingPage() {
               Cargas y camiones, <span style={{ color: "#4ADE80" }}>conectados</span>.
             </h2>
             <p className="mt-4 text-base leading-relaxed" style={{ color: "#9CA3AF" }}>
-              Empresas que necesitan transporte y transportistas de todo el país, en un solo lugar.
+              Desde un flete chico hasta varios camiones: quien necesita enviar y quien transporta, en un solo lugar.
             </p>
             <ul className="mt-6 space-y-3 text-sm" style={{ color: "#D1D5DB" }}>
               {[
@@ -130,7 +130,7 @@ export default async function LandingPage() {
               ))}
             </ul>
             <p className="mt-8 text-xs font-semibold uppercase tracking-wider" style={{ color: "#6B7280" }}>
-              Elegí cómo querés usar ClickCargo
+              ¿Qué necesitás hacer?
             </p>
           </div>
 
@@ -148,7 +148,12 @@ export default async function LandingPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10m10 0H3m10 0h1m4-8h1a2 2 0 012 2v6h-3M13 8h5l2 4" />
               </svg>
             </span>
-            SOY TRANSPORTISTA
+            <span className="flex flex-col">
+              QUIERO TRANSPORTAR
+              <span className="text-xs font-medium normal-case tracking-normal" style={{ color: "#4B5563" }}>
+                Tengo un vehículo y busco viajes
+              </span>
+            </span>
           </Link>
 
           <Link
@@ -165,21 +170,26 @@ export default async function LandingPage() {
               style={{ backgroundColor: "#3B82F618" }}
             >
               <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
             </span>
-            SOY EMPRESA
+            <span className="flex flex-col">
+              QUIERO ENVIAR
+              <span className="text-xs font-medium normal-case tracking-normal" style={{ color: "#9CA3AF" }}>
+                Desde un flete chico hasta varios camiones
+              </span>
+            </span>
           </Link>
 
           {/* Quien llega desde redes sin conocer la app puede ver de qué se trata */}
           <p className="text-center text-xs" style={{ color: "#9CA3AF" }}>
             ¿Qué es ClickCargo?{" "}
-            <Link href="/para-empresas" className="font-semibold underline underline-offset-2">
-              Empresas
+            <Link href="/enviar" className="font-semibold underline underline-offset-2">
+              Para enviar
             </Link>
             {" · "}
             <Link href="/para-transportistas" className="font-semibold underline underline-offset-2">
-              Transportistas
+              Para transportar
             </Link>
           </p>
 

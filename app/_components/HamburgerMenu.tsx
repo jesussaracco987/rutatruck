@@ -81,7 +81,7 @@ export function HamburgerMenu({ role, isMultiRole }: { role: "empresa" | "transp
                 className="w-full text-left px-4 py-3 text-sm transition-colors hover:bg-white/5 cursor-pointer"
                 style={{ color: "#4ADE80" }}
               >
-                {role === "empresa" ? "↔ Cambiar a transportista" : "↔ Cambiar a empresa"}
+                {role === "empresa" ? "↔ Cambiar a transportista" : "↔ Cambiar a cliente"}
               </SwitchRoleButton>
             </>
           )}

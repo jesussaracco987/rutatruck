@@ -28,7 +28,7 @@ export default async function DisponibilidadPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-black text-gray-900 mb-1">Mi disponibilidad</h1>
           <p className="text-sm" style={{ color: "#6B7280" }}>
-            Las empresas te verán en el mapa de transportistas disponibles.
+            Los clientes te verán en el mapa de transportistas disponibles.
           </p>
         </div>
 

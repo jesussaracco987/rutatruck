@@ -74,7 +74,7 @@ export default function RegistroPage({
         <form action={action} onFocus={alEmpezar} className="space-y-4">
           <div>
             <label htmlFor="name" className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#9CA3AF" }}>
-              Nombre completo / Empresa
+              Nombre o razón social
             </label>
             <input
               id="name"
@@ -142,7 +142,7 @@ export default function RegistroPage({
 
           <div>
             <p className="block text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: "#9CA3AF" }}>
-              Soy...
+              Quiero...
             </p>
             <div className="space-y-3">
               <label className="flex items-center gap-3 cursor-pointer select-none">
@@ -154,7 +154,7 @@ export default function RegistroPage({
                   onChange={(e) => setEsEmpresa(e.target.checked)}
                   className="w-4 h-4 rounded accent-green-400 cursor-pointer"
                 />
-                <span className="text-sm text-white">Empresa — publico cargas</span>
+                <span className="text-sm text-white">Enviar — publico cargas</span>
               </label>
 
               <label className="flex items-center gap-3 cursor-pointer select-none">
@@ -166,7 +166,7 @@ export default function RegistroPage({
                   onChange={(e) => setEsTransportista(e.target.checked)}
                   className="w-4 h-4 rounded accent-green-400 cursor-pointer"
                 />
-                <span className="text-sm text-white">Transportista — me postulo a cargas</span>
+                <span className="text-sm text-white">Transportar — me postulo a cargas</span>
               </label>
 
               {esTransportista && (
@@ -179,7 +179,7 @@ export default function RegistroPage({
                       defaultChecked
                       className="w-4 h-4 accent-green-400 cursor-pointer"
                     />
-                    <span className="text-sm" style={{ color: "#D1D5DB" }}>Individual — 1 camión</span>
+                    <span className="text-sm" style={{ color: "#D1D5DB" }}>Individual — 1 vehículo</span>
                   </label>
                   <label className="flex items-center gap-3 cursor-pointer select-none">
                     <input
@@ -188,7 +188,7 @@ export default function RegistroPage({
                       value="flota"
                       className="w-4 h-4 accent-green-400 cursor-pointer"
                     />
-                    <span className="text-sm" style={{ color: "#D1D5DB" }}>Flota — 2 o más camiones</span>
+                    <span className="text-sm" style={{ color: "#D1D5DB" }}>Flota — 2 o más vehículos</span>
                   </label>
 
                   <div className="pt-3 space-y-3">

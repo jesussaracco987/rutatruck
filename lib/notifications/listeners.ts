@@ -8,6 +8,7 @@ import {
 import { notifyEmpresa, notifyTransportista } from "@/lib/sse";
 import { DIAS_EN_CONFIRMACION_ABANDONADA } from "@/lib/plazos";
 import { getVehiculoLabel } from "@/lib/vehiculos";
+import { emailCargaPublicada, emailPrimeraPostulacion } from "./emails";
 
 /**
  * Los listeners disparan trabajo async (push + SSE) sin bloquear la respuesta
@@ -49,14 +50,23 @@ function notificarCargaDisponibleCercana({
   );
 }
 
-onUnaVez("pago.aprobado.publicacion", notificarCargaDisponibleCercana);
-onUnaVez("carga.publicada", notificarCargaDisponibleCercana);
+function alPublicarCarga(carga: Parameters<typeof notificarCargaDisponibleCercana>[0] & { cargaId: number }) {
+  notificarCargaDisponibleCercana(carga);
+  after(() =>
+    emailCargaPublicada(carga.cargaId).catch((err) =>
+      console.error("[listener] email de carga publicada falló:", err),
+    ),
+  );
+}
+
+onUnaVez("pago.aprobado.publicacion", alPublicarCarga);
+onUnaVez("carga.publicada", alPublicarCarga);
 
 onUnaVez("postulacion.aceptada", ({ transportistaId, cargaId, titulo, convocatoriaCubierta }) => {
   console.log("[listener] postulacion.aceptada recibido", { transportistaId, cargaId });
   const body = convocatoriaCubierta
-    ? `Sos el transportista asignado para "${titulo}". Iniciá una conversación con la empresa desde la app para coordinar.`
-    : `Fuiste aceptado para "${titulo}". La empresa está coordinando los transportistas restantes.`;
+    ? `Sos el transportista asignado para "${titulo}". Iniciá una conversación con el cliente desde la app para coordinar.`
+    : `Fuiste aceptado para "${titulo}". El cliente está coordinando los transportistas restantes.`;
 
   after(async () => {
     console.log("[listener] postulacion.aceptada after() ejecutando", { transportistaId });
@@ -127,7 +137,7 @@ onUnaVez("convocatoria.cerrada", ({ cargaId, titulo, transportistaIds }) => {
       transportistaIds.flatMap((transportistaId) => [
         sendPushToUser(transportistaId, {
           title: "¡Convocatoria cerrada!",
-          body: `Fuiste asignado para "${titulo}". Iniciá una conversación con la empresa desde la app para coordinar.`,
+          body: `Fuiste asignado para "${titulo}". Iniciá una conversación con el cliente desde la app para coordinar.`,
           url: `/transportista/cargas/${cargaId}`,
         }),
         notifyTransportista(transportistaId),
@@ -145,6 +155,9 @@ onUnaVez("postulacion.creada", ({ cargaId, empresaId, titulo }) => {
         url: `/empresa/cargas/${cargaId}`,
       }),
       notifyEmpresa(empresaId),
+      emailPrimeraPostulacion(cargaId).catch((err) =>
+        console.error("[listener] email de primera postulación falló:", err),
+      ),
     ]);
   });
 });
@@ -181,7 +194,7 @@ onUnaVez("oferta-privada.creada",({ transportistaId, cargaId, titulo }) => {
     await Promise.allSettled([
       sendPushToUser(transportistaId, {
         title: "Nueva oferta directa",
-        body: `Una empresa te ofrece un servicio: ${titulo}`,
+        body: `Un cliente te ofrece un servicio: ${titulo}`,
         url: `/transportista/cargas/${cargaId}`,
       }),
       notifyTransportista(transportistaId),

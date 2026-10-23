@@ -28,7 +28,7 @@ export default async function TransportistaConversacionesPage() {
         <div className="mb-6">
           <h1 className="text-2xl font-black text-gray-900 mb-1">Conversaciones</h1>
           <p className="text-sm" style={{ color: "#6B7280" }}>
-            Coordiná con las empresas de tus cargas asignadas
+            Coordiná con los clientes de tus cargas asignadas
           </p>
         </div>
 
@@ -43,7 +43,7 @@ export default async function TransportistaConversacionesPage() {
               </svg>
             </div>
             <p style={{ color: "#374151" }}>
-              Todavía no tenés conversaciones. Cuando te acepten en una carga, vas a poder chatear con la empresa acá.
+              Todavía no tenés conversaciones. Cuando te acepten en una carga, vas a poder chatear con el cliente acá.
             </p>
           </div>
         ) : (

@@ -14,7 +14,7 @@ export type Origen = {
   medio: string | null;
   campania: string | null;
   contenido: string | null;
-  /** Primera página que vio (ej. "/para-empresas"). */
+  /** Primera página que vio (ej. "/enviar"). */
   landing: string | null;
   /** Dominio externo desde el que llegó, si el navegador lo informó. */
   referrer: string | null;

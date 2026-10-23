@@ -290,7 +290,7 @@ export default async function CargaPublicaPage({
             {esperandoConfirmacion && (
               <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3">
                 <p className="text-sm text-orange-700 font-medium">
-                  Marcaste este viaje como completado. Esperando confirmación de la empresa.
+                  Marcaste este viaje como completado. Esperando confirmación del cliente.
                 </p>
               </div>
             )}
@@ -307,7 +307,7 @@ export default async function CargaPublicaPage({
         {soyAsignado && carga.estado === "FINALIZADA" && (
           <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 mb-6">
             <p className="text-sm text-green-700 font-medium">
-              Viaje completado y confirmado por la empresa.
+              Viaje completado y confirmado por el cliente.
             </p>
           </div>
         )}
@@ -319,7 +319,7 @@ export default async function CargaPublicaPage({
           >
             <h2 className="font-medium text-gray-900 mb-1">Calificá el viaje</h2>
             <p className="text-sm mb-4" style={{ color: "#6B7280" }}>
-              Contá cómo fue trabajar con esta empresa. Ayuda al resto de los transportistas.
+              Contá cómo fue trabajar con este cliente. Ayuda al resto de los transportistas.
             </p>
             {yaCalifiqueEmpresa ? (
               <div

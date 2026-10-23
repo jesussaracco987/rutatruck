@@ -66,7 +66,7 @@ export default async function PerfilPublicoPage({
             <BadgeVerificado verificado={perfil.emailVerified} />
           </div>
           <p className="text-sm" style={{ color: "#6B7280" }}>
-            {esCuentaEmpresa ? "Empresa" : "Transportista"} · en ClickCargo desde{" "}
+            {esCuentaEmpresa ? "Cliente" : "Transportista"} · en ClickCargo desde{" "}
             {perfil.createdAt.toLocaleDateString("es-AR", { month: "long", year: "numeric" })}
           </p>
 

@@ -32,9 +32,9 @@ export default function PostularseButton({ cargaId, miPostulacion, contactoDefec
       RECHAZADA: { backgroundColor: "#FFFFFF0A", borderColor: "#E2E8E8", color: "#6B7280" },
     };
     const labelMap: Record<string, string> = {
-      PENDIENTE: "Tu postulación está pendiente. La empresa te contactará si te selecciona.",
-      ACEPTADA: "¡Fuiste seleccionado para esta carga! La empresa se pondrá en contacto.",
-      RECHAZADA: "La empresa seleccionó otro transportista para esta carga.",
+      PENDIENTE: "Tu postulación está pendiente. El cliente te contactará si te selecciona.",
+      ACEPTADA: "¡Fuiste seleccionado para esta carga! El cliente se pondrá en contacto.",
+      RECHAZADA: "El cliente seleccionó otro transportista para esta carga.",
     };
     const cardStyle = styleMap[miPostulacion.estado] ?? styleMap.PENDIENTE;
     return (
@@ -190,7 +190,7 @@ export default function PostularseButton({ cargaId, miPostulacion, contactoDefec
 
         <div>
           <label className={labelClass} style={labelStyle}>
-            Mensaje para la empresa (opcional)
+            Mensaje para el cliente (opcional)
           </label>
           <textarea
             value={mensaje}
