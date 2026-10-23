@@ -12,7 +12,7 @@ export default function CompletarViajeButton({ cargaId }: { cargaId: number }) {
   async function handleClick() {
     const result = await Swal.fire({
       title: "¿Marcar como completado?",
-      text: "La empresa deberá confirmar el viaje.",
+      text: "El cliente deberá confirmar el viaje.",
       icon: "question",
       showCancelButton: true,
       confirmButtonText: "Sí, completado",
@@ -36,7 +36,7 @@ export default function CompletarViajeButton({ cargaId }: { cargaId: number }) {
       if (!res.ok) throw new Error(data.error ?? "Error al marcar completado");
       await Swal.fire({
         title: "¡Listo!",
-        text: "Viaje marcado como completado. Esperando confirmación de la empresa.",
+        text: "Viaje marcado como completado. Esperando confirmación del cliente.",
         icon: "success",
         confirmButtonText: "Aceptar",
         background: "#112424",

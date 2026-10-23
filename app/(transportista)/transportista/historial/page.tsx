@@ -115,7 +115,7 @@ export default async function TransportistaHistorialPage() {
                       </div>
                     )}
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide mb-0.5" style={{ color: "#6B7280" }}>Empresa</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide mb-0.5" style={{ color: "#6B7280" }}>Cliente</p>
                       <p className="text-sm font-bold text-gray-900">{carga.contactoNombre}</p>
                     </div>
                   </div>

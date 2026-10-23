@@ -22,7 +22,7 @@ export default function CargasPorCompletarBanner({ cargas }: { cargas: CargaVenc
             : `Tenés ${cargas.length} viajes para marcar como completados`}
         </p>
         <p className="text-xs mt-1" style={{ color: "#B45309" }}>
-          Ya pasó la fecha de cupo. Marcalos para que la empresa pueda confirmar y cerrar la operación.
+          Ya pasó la fecha de cupo. Marcalos para que el cliente pueda confirmar y cerrar la operación.
         </p>
       </div>
 

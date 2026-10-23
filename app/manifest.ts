@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "ClickCargo",
     short_name: "ClickCargo",
-    description: "Plataforma que conecta empresas con transportistas de carga",
+    description: "Plataforma que conecta a quien necesita enviar una carga con transportistas",
     id: "/",
     start_url: "/",
     display: "standalone",

@@ -13,11 +13,11 @@ const description =
 export const metadata: Metadata = {
   title,
   description,
-  alternates: { canonical: absoluteUrl("/para-empresas") },
+  alternates: { canonical: absoluteUrl("/enviar") },
   openGraph: {
     title,
     description,
-    url: absoluteUrl("/para-empresas"),
+    url: absoluteUrl("/enviar"),
     siteName: "ClickCargo",
     locale: "es_AR",
     type: "website",
@@ -25,6 +25,6 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ParaEmpresasPage() {
+export default function EnviarPage() {
   return <Landing variant="empresa" />;
 }

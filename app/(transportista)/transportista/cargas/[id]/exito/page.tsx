@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 const PASOS = [
-  "La empresa revisará tu solicitud",
+  "El cliente revisará tu solicitud",
   "Si te seleccionan, te confirmarán el viaje",
   "Podrás ver el contacto para coordinar",
 ];
@@ -32,7 +32,7 @@ export default function ExitoPostulacionPage() {
           ¡Propuesta enviada!
         </h1>
         <p className="text-base text-center mb-10" style={{ color: "rgba(255,255,255,0.65)" }}>
-          La empresa fue notificada.
+          El cliente fue notificado.
         </p>
 
         {/* Próximos pasos */}

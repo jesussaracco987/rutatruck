@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 });
 
 const description =
-  "Plataforma que conecta empresas con transportistas para coordinar cargas de forma simple y segura";
+  "Plataforma que conecta a quien necesita enviar una carga con transportistas, para coordinar de forma simple y segura";
 
 export const metadata: Metadata = {
   // Para que las URLs relativas (la imagen de vista previa) salgan absolutas.

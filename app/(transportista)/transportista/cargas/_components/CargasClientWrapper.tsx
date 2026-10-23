@@ -45,7 +45,7 @@ function OfertaPrivadaCard({ carga, onRespond }: { carga: CargaPrivada; onRespon
       <div className="px-4 py-2 flex items-center gap-2 border-b" style={{ borderColor: "#86EFAC", backgroundColor: "#DCFCE7" }}>
         <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
         <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "#166534" }}>
-          Oferta directa — Una empresa te solicitó
+          Oferta directa — Un cliente te solicitó
         </span>
       </div>
       <div className="p-4">
@@ -194,7 +194,7 @@ export default function CargasClientWrapper({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
                 <p className="text-sm font-medium" style={{ color: "var(--primary)" }}>
-                  ¡Postulación enviada! La empresa te contactará si te selecciona.
+                  ¡Postulación enviada! El cliente te contactará si te selecciona.
                 </p>
               </div>
             )}
@@ -205,7 +205,7 @@ export default function CargasClientWrapper({
                 <div className="flex items-center gap-2 mb-3">
                   <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                   <h2 className="text-sm font-semibold uppercase tracking-wider" style={{ color: "#166534" }}>
-                    Ofertas directas — {privadas.length} empresa{privadas.length !== 1 ? "s" : ""} te solicit{privadas.length !== 1 ? "aron" : "ó"}
+                    Ofertas directas — {privadas.length} cliente{privadas.length !== 1 ? "s" : ""} te solicit{privadas.length !== 1 ? "aron" : "ó"}
                   </h2>
                 </div>
                 <div className="space-y-3">

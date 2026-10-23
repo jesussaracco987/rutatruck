@@ -279,7 +279,7 @@ export async function crearOfertaPrivada(
     fechaCarga: input.fechaCarga,
     presupuesto: input.presupuesto,
     descripcion: input.descripcion,
-    contactoNombre: empresa?.name ?? "Empresa",
+    contactoNombre: empresa?.name ?? "Cliente",
     contactoTelefono: empresa?.phone ?? "",
     contactoEmail: empresa?.email ?? "",
     empresaId,
@@ -404,7 +404,7 @@ export async function cancelarCargasVencidasSinAceptar() {
       ...c.postulaciones.map((p) =>
         sendPushToUser(p.transportistaId, {
           title: "Carga dada de baja",
-          body: `"${c.titulo}" se canceló porque la empresa no llegó a cubrir la convocatoria a tiempo.`,
+          body: `"${c.titulo}" se canceló porque el cliente no llegó a cubrir la convocatoria a tiempo.`,
           url: `/transportista/cargas`,
         }),
       ),
@@ -531,7 +531,7 @@ export async function cerrarViajesAbandonados() {
         ...destinatariosTransportistas(c).map((transportistaId) =>
           sendPushToUser(transportistaId, {
             title: "Viaje cerrado automáticamente",
-            body: `"${c.titulo}" se cerró sin confirmación de la empresa. Ya podés calificarla.`,
+            body: `"${c.titulo}" se cerró sin confirmación del cliente. Ya podés calificarlo.`,
             url: `/transportista/cargas/${c.id}`,
           }),
         ),

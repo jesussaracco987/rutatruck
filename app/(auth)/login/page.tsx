@@ -1,13 +1,20 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { use, useActionState, useState } from "react";
 import Link from "next/link";
 import LogoClickCargo from "@/app/_components/LogoClickCargo";
 import PurgeAuthedCache from "@/app/_components/PurgeAuthedCache";
 import PurgeAuthedPush from "@/app/_components/PurgeAuthedPush";
 import { login } from "@/app/actions/auth";
 
-export default function LoginPage() {
+export default function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ volver?: string | string[] }>;
+}) {
+  // proxy.ts manda acá con ?volver=/ruta cuando alguien abre una pantalla
+  // protegida sin sesión; login la valida antes de redirigir.
+  const { volver } = use(searchParams);
   const [state, action, pending] = useActionState(login, undefined);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -41,6 +48,7 @@ export default function LoginPage() {
         </p>
 
         <form action={action} className="space-y-4">
+          {typeof volver === "string" && <input type="hidden" name="volver" value={volver} />}
           <div>
             <label
               htmlFor="email"

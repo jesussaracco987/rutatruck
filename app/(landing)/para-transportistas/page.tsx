@@ -8,7 +8,7 @@ export const revalidate = 3600;
 
 const title = "Cargas para camiones en todo el país | ClickCargo";
 const description =
-  "Encontrá cargas cerca tuyo, postulate desde el celular y coordiná directo con la empresa. Avisos por zona. Gratis durante el lanzamiento.";
+  "Encontrá cargas cerca tuyo, postulate desde el celular y coordiná directo con quien envía. Avisos por zona. Gratis durante el lanzamiento.";
 
 export const metadata: Metadata = {
   title,

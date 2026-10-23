@@ -85,7 +85,7 @@ export default function NuevaCargaForm({
   const [emailExistente, setEmailExistente] = useState(false);
   const [password, setPassword] = useState("");
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
-  const volverHref = invitado ? "/para-empresas" : "/empresa/dashboard";
+  const volverHref = invitado ? "/enviar" : "/empresa/dashboard";
   // Embudo de /publicar: cuántos empiezan a cargar el flete sin cuenta. El
   // final (sign_up + carga_publicada) lo registra el servidor.
   const iniciado = useRef(false);
@@ -176,6 +176,7 @@ export default function NuevaCargaForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...fields,
+          cantidadCamiones: fields.tipoCarga === "paqueteria" ? "1" : fields.cantidadCamiones,
           presupuesto: presupuestoAcordar ? "" : fields.presupuesto,
           ...(invitado ? { password, aceptaTerminos } : {}),
         }),
@@ -364,27 +365,6 @@ export default function NuevaCargaForm({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="cantidadCamiones" className={labelClass} style={labelStyle}>
-                  ¿Cuántos camiones necesitás? *
-                </label>
-                <input
-                  id="cantidadCamiones"
-                  name="cantidadCamiones"
-                  type="number"
-                  required
-                  min="1"
-                  step="1"
-                  value={fields.cantidadCamiones}
-                  onChange={set("cantidadCamiones")}
-                  className={inputClass}
-                  style={inputStyle}
-                  placeholder="1"
-                />
-              </div>
-            </div>
-
             <div>
               <label
                 htmlFor="tipoCarga"
@@ -398,7 +378,18 @@ export default function NuevaCargaForm({
                 name="tipoCarga"
                 required
                 value={fields.tipoCarga}
-                onChange={set("tipoCarga")}
+                onChange={(e) => {
+                  const tipoCarga = e.target.value;
+                  // Un paquete viaja en un solo vehículo y se pesa en kg.
+                  setFields((f) => ({
+                    ...f,
+                    tipoCarga,
+                    ...(tipoCarga === "paqueteria" && {
+                      cantidadCamiones: "1",
+                      ...(!f.peso && { pesoUnidad: "kg" }),
+                    }),
+                  }));
+                }}
                 className={inputClass}
                 style={inputStyle}
               >
@@ -441,6 +432,62 @@ export default function NuevaCargaForm({
                 />
               </div>
             )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {fields.tipoCarga !== "paqueteria" && (
+                <div>
+                  <label htmlFor="cantidadCamiones" className={labelClass} style={labelStyle}>
+                    ¿Cuántos camiones necesitás? *
+                  </label>
+                  <input
+                    id="cantidadCamiones"
+                    name="cantidadCamiones"
+                    type="number"
+                    required
+                    min="1"
+                    step="1"
+                    value={fields.cantidadCamiones}
+                    onChange={set("cantidadCamiones")}
+                    className={inputClass}
+                    style={inputStyle}
+                    placeholder="1"
+                  />
+                </div>
+              )}
+              <div>
+                <label htmlFor="peso" className={labelClass} style={labelStyle}>
+                  Peso estimado{" "}
+                  <span className="text-xs" style={{ color: "#6B7280" }}>
+                    (opcional)
+                  </span>
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="peso"
+                    name="peso"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    value={fields.peso}
+                    onChange={set("peso")}
+                    className={inputClass}
+                    style={inputStyle}
+                    placeholder={fields.pesoUnidad === "kg" ? "Ej: 15" : "Ej: 28"}
+                  />
+                  <select
+                    name="pesoUnidad"
+                    value={fields.pesoUnidad}
+                    onChange={set("pesoUnidad")}
+                    className={inputClass}
+                    style={{ ...inputStyle, minWidth: "120px", width: "auto" }}
+                  >
+                    <option value="tonelada">Tonelada</option>
+                    <option value="kg">kg</option>
+                    <option value="bulto">Bulto</option>
+                  </select>
+                </div>
+              </div>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>

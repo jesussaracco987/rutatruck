@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { createSession, deleteSession, type Role } from "@/lib/session";
 import { crearCuenta } from "@/lib/services/cuenta.service";
+import { isEmpresa, isTransportista } from "@/lib/roles";
 
 export type FormState = { error?: string } | undefined;
 
@@ -86,7 +87,26 @@ export async function login(
   if (!valid) return { error: "Credenciales inválidas" };
 
   await createSession(user.id, user.role as Role, user.esFlota);
-  redirect(dashboardByRole[user.role as Role]);
+  redirect(destinoTrasLogin(formData.get("volver"), user.role as Role) ?? dashboardByRole[user.role as Role]);
+}
+
+/**
+ * Ruta a la que vuelve quien ingresó desde un link a una pantalla protegida
+ * (`/login?volver=...`, lo arma proxy.ts). Solo se aceptan rutas internas del
+ * panel de su rol: una URL externa sería un redirect abierto, y una de otro
+ * panel el proxy la rebotaría igual.
+ */
+function destinoTrasLogin(volver: FormDataEntryValue | null, role: Role): string | null {
+  if (typeof volver !== "string" || !volver.startsWith("/") || volver.startsWith("//") || volver.includes("\\")) {
+    return null;
+  }
+  const prefijos =
+    role === "ADMIN"
+      ? ["/admin", "/empresa", "/transportista"]
+      : [...(isEmpresa(role) ? ["/empresa"] : []), ...(isTransportista(role) ? ["/transportista"] : [])];
+  return prefijos.some((p) => volver === p || volver.startsWith(`${p}/`) || volver.startsWith(`${p}?`))
+    ? volver
+    : null;
 }
 
 export async function logout() {
