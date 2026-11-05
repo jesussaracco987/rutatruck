@@ -5,6 +5,7 @@ import type { Map as MapboxMap, Marker as MapboxMarker } from "mapbox-gl";
 import RatingChip from "@/app/_components/RatingChip";
 import BadgeVerificado from "@/app/_components/BadgeVerificado";
 import { VEHICULO_META, getVehiculoLabel } from "@/lib/vehiculos";
+import { hoyArgentina } from "@/lib/chat-carga";
 
 const TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
 
@@ -30,7 +31,20 @@ export type TransportistaDisp = {
   ratingPromedio: number | null;
   ratingCantidad: number;
   emailVerified: boolean;
+  miembroDesde: string | null;
+  viajesRealizados: number;
+  esFlota: boolean;
 };
+
+/** "nov. 2026": la antigüedad alcanza con mes y año. */
+function formatMesAnio(iso: string | null) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString("es-AR", {
+    month: "short",
+    year: "numeric",
+    timeZone: "America/Argentina/Buenos_Aires",
+  });
+}
 
 function formatRelative(isoDate: string) {
   const diff = Date.now() - new Date(isoDate).getTime();
@@ -68,7 +82,8 @@ function DetailPanel({
   const [formSent, setFormSent] = useState(false);
   const [formError, setFormError] = useState("");
   const [isPending, startTransition] = useTransition();
-  const today = new Date().toISOString().slice(0, 10);
+  // Hoy en Argentina: con toISOString, después de las 21 h ya sería mañana.
+  const today = hoyArgentina();
   const [form, setForm] = useState<SolicitudForm>({
     titulo: "",
     origen: "",
@@ -314,6 +329,15 @@ function DetailPanel({
               <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
                 <RatingChip promedio={t.ratingPromedio} cantidad={t.ratingCantidad} />
                 <BadgeVerificado verificado={t.emailVerified} />
+                {t.esFlota && (
+                  <span
+                    className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                    style={{ backgroundColor: "#E0E7FF", color: "#3730A3" }}
+                    title="Tiene más de un vehículo y puede cubrir varios camiones"
+                  >
+                    Flota
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -363,6 +387,22 @@ function DetailPanel({
               </p>
               <p className="text-sm font-bold text-gray-900">
                 {formatRelative(t.actualizadoEn)}
+              </p>
+            </div>
+            <div className="rounded-xl p-3 border" style={{ borderColor: "#E2E8E8" }}>
+              <p className="text-xs font-semibold uppercase tracking-wide mb-0.5" style={{ color: "#6B7280" }}>
+                Viajes en ClickCargo
+              </p>
+              <p className="text-sm font-bold text-gray-900">
+                {t.viajesRealizados > 0 ? t.viajesRealizados : "Todavía ninguno"}
+              </p>
+            </div>
+            <div className="rounded-xl p-3 border" style={{ borderColor: "#E2E8E8" }}>
+              <p className="text-xs font-semibold uppercase tracking-wide mb-0.5" style={{ color: "#6B7280" }}>
+                Miembro desde
+              </p>
+              <p className="text-sm font-bold text-gray-900">
+                {formatMesAnio(t.miembroDesde)}
               </p>
             </div>
           </div>

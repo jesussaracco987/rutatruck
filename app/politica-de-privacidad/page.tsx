@@ -27,7 +27,11 @@ export default function PoliticaDePrivacidadPage() {
           ClickCargo recopila la siguiente información cuando usás nuestra plataforma:
         </p>
         <ul className="list-disc pl-6 space-y-1" style={{ color: "var(--text-secondary)" }}>
-          <li>Nombre, correo electrónico y contraseña al registrarte.</li>
+          <li>
+            Nombre, correo electrónico, teléfono y contraseña al registrarte. Si publicás una carga
+            sin tener cuenta, la creamos con tu correo y teléfono después de verificar tu correo con
+            un código; la contraseña la podés elegir más tarde.
+          </li>
           <li>Datos de empresa o transportista (CUIT, razón social, tipo de vehículo, etc.).</li>
           <li>Ubicación geográfica en tiempo real (solo para transportistas, con tu consentimiento).</li>
           <li>Información sobre cargas publicadas y postulaciones realizadas.</li>
@@ -56,6 +60,7 @@ export default function PoliticaDePrivacidadPage() {
         </h2>
         <ul className="list-disc pl-6 space-y-1" style={{ color: "var(--text-secondary)" }}>
           <li>Conectar empresas con transportistas disponibles.</li>
+          <li>Interpretar con inteligencia artificial el pedido que escribís o grabás en el chat y armar la carga.</li>
           <li>Mostrar ubicación de transportistas en el mapa a empresas autorizadas.</li>
           <li>Enviar notificaciones push sobre cargas, postulaciones y actualizaciones.</li>
           <li>Mejorar la plataforma y solucionar problemas técnicos.</li>
@@ -78,23 +83,42 @@ export default function PoliticaDePrivacidadPage() {
             <strong>Mapbox:</strong> para servicios de mapas y geocodificación.
           </li>
           <li>
+            <strong>OpenAI:</strong> recibe el texto y los audios del chat de publicación para
+            interpretarlos. No le enviamos los datos de tu cuenta (nombre, correo ni teléfono), solo
+            lo que escribís o grabás. Según sus condiciones para el uso por API, por defecto no usa
+            esos datos para entrenar sus modelos.
+          </li>
+          <li>
+            <strong>Proveedores de infraestructura:</strong> servidores, base de datos y envío de
+            correos (por ejemplo, los códigos de verificación).
+          </li>
+          <li>
             <strong>Google Analytics y Meta (Facebook e Instagram):</strong> para medir el uso de la
             plataforma y el resultado de nuestras campañas. No les enviamos tu nombre, correo ni
             teléfono.
           </li>
           <li>Autoridades competentes si la ley lo requiere.</li>
         </ul>
+        <p className="mt-2" style={{ color: "var(--text-secondary)" }}>
+          Algunos de estos proveedores procesan los datos en servidores fuera de la Argentina, con
+          medidas de protección equivalentes.
+        </p>
       </section>
 
       <section className="mb-8">
         <h2 className="text-xl font-semibold mb-3" style={{ color: "var(--text)" }}>
-          4. Ubicación
+          4. Ubicación y micrófono
         </h2>
-        <p style={{ color: "var(--text-secondary)" }}>
+        <p className="mb-2" style={{ color: "var(--text-secondary)" }}>
           Solicitamos acceso a tu ubicación únicamente si sos transportista y tenés disponibilidad
           activa. Esta información se usa para mostrar tu posición a empresas que buscan
           transportistas cercanos. Podés desactivar el seguimiento en cualquier momento desde la
-          sección de disponibilidad.
+          sección de disponibilidad. Al publicar una carga también podés usar tu ubicación para
+          marcar el punto en el mapa; en ese caso se usa solo para ese punto.
+        </p>
+        <p style={{ color: "var(--text-secondary)" }}>
+          El micrófono se usa únicamente mientras grabás un audio en el chat de publicación, después
+          de que lo autorices en tu dispositivo.
         </p>
       </section>
 
@@ -103,8 +127,11 @@ export default function PoliticaDePrivacidadPage() {
           5. Seguridad
         </h2>
         <p style={{ color: "var(--text-secondary)" }}>
-          Usamos HTTPS, contraseñas hasheadas y tokens seguros para proteger tu información.
-          Ningún sistema es 100% seguro, pero tomamos medidas razonables para resguardar tus datos.
+          Usamos HTTPS, contraseñas hasheadas y tokens seguros para proteger tu información. Los
+          códigos de verificación se guardan cifrados y vencen a los 15 minutos. Para evitar abusos
+          del chat limitamos su uso con un identificador derivado de tu conexión, sin guardar tu
+          dirección IP. Ningún sistema es 100% seguro, pero tomamos medidas razonables para
+          resguardar tus datos.
         </p>
       </section>
 
@@ -135,7 +162,9 @@ export default function PoliticaDePrivacidadPage() {
         </h2>
         <p style={{ color: "var(--text-secondary)" }}>
           Conservamos tu información mientras tu cuenta esté activa. Al eliminar tu cuenta, borramos
-          tus datos personales en un plazo de 30 días, salvo obligación legal de retenerlos.
+          tus datos personales en un plazo de 30 días, salvo obligación legal de retenerlos. Las
+          conversaciones del chat de publicación se borran a los 90 días, aunque la cuenta siga
+          activa, y los audios no se guardan.
         </p>
       </section>
 

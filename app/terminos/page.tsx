@@ -23,7 +23,7 @@ const SECCIONES: Seccion[] = [
   {
     titulo: "Aceptación",
     parrafos: [
-      "Al crear una cuenta aceptás estos Términos y Condiciones y la Política de Privacidad. Si no estás de acuerdo, no uses la plataforma.",
+      "Al crear una cuenta, o al publicar una carga sin tener cuenta, aceptás estos Términos y Condiciones y la Política de Privacidad. Si no estás de acuerdo, no uses la plataforma.",
     ],
   },
   {
@@ -31,7 +31,8 @@ const SECCIONES: Seccion[] = [
     items: [
       "Tenés que ser mayor de 18 años y tener capacidad legal para contratar. Si te registrás en nombre de una empresa, declarás que estás autorizado a hacerlo.",
       "Los datos que cargás tienen que ser reales y estar actualizados.",
-      "Sos responsable de cuidar tu contraseña y de todo lo que se haga desde tu cuenta.",
+      "Sos responsable de cuidar tu contraseña, el acceso a tu correo y todo lo que se haga desde tu cuenta. Las cuentas de empresa también pueden ingresar con un código enviado a su correo.",
+      "Si publicás una carga sin tener cuenta, la creamos con el correo y el teléfono que indicás, después de verificar el correo con un código.",
       "Podés eliminar tu cuenta cuando quieras desde la sección de cuenta o escribiéndonos.",
     ],
   },
@@ -41,6 +42,14 @@ const SECCIONES: Seccion[] = [
       "La información de la carga (origen, destino, tipo, peso, fecha y condiciones) tiene que ser verdadera y completa.",
       "Solo se pueden publicar cargas lícitas. Si la carga requiere habilitaciones o permisos especiales, tenés que indicarlo y contar con ellos.",
       "La empresa es responsable de la carga que entrega, de su documentación y de pagar el flete acordado con el transportista.",
+    ],
+  },
+  {
+    titulo: "Asistente para publicar cargas",
+    parrafos: [
+      "Podés publicar una carga contándola por escrito o con un audio a un asistente con inteligencia artificial, que arma un borrador con los datos. El asistente puede equivocarse o interpretar mal un pedido: antes de publicar te mostramos un resumen para que lo revises y lo corrijas.",
+      "Lo que se publica es lo que confirmás en ese resumen, y sos responsable de que sea correcto, igual que si completaras el formulario. El formulario sigue disponible para quien prefiera cargar los datos a mano.",
+      "El uso del asistente tiene límites para evitar abusos. Si se alcanzan, o si el asistente no está disponible, podés publicar con el formulario.",
     ],
   },
   {
@@ -83,7 +92,7 @@ const SECCIONES: Seccion[] = [
   {
     titulo: "Mensajes",
     parrafos: [
-      "El chat de la plataforma es para coordinar las cargas. Los mensajes se conservan por un tiempo limitado después de finalizado el viaje y pueden ser revisados ante una disputa o una denuncia.",
+      "El chat entre empresas y transportistas es para coordinar las cargas. Los mensajes se conservan por un tiempo limitado después de finalizado el viaje y pueden ser revisados ante una disputa o una denuncia.",
     ],
   },
   {
@@ -94,6 +103,7 @@ const SECCIONES: Seccion[] = [
       "Acosar, amenazar o engañar a otros usuarios.",
       "Crear cuentas con datos de terceros o intentar acceder a cuentas ajenas.",
       "Interferir con el funcionamiento de la plataforma o extraer datos de forma automatizada.",
+      "Usar el asistente para fines ajenos a publicar cargas o intentar alterar su funcionamiento.",
     ],
   },
   {
@@ -133,7 +143,7 @@ export default function TerminosPage() {
           Términos y Condiciones
         </h1>
         <p className="text-sm mb-8" style={{ color: "var(--text-muted)" }}>
-          Última actualización: octubre 2026
+          Última actualización: noviembre 2026
         </p>
 
         {SECCIONES.map((seccion, i) => (

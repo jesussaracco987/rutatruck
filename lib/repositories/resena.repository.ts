@@ -119,6 +119,62 @@ export async function findRatingsDeUsuarios(userIds: string[]) {
   });
 }
 
+export type ConfianzaTransportista = {
+  ratingPromedio: number | null;
+  ratingCantidad: number;
+  emailVerified: boolean;
+  /** ISO: desde cuándo tiene cuenta. */
+  miembroDesde: string | null;
+  viajesRealizados: number;
+  esFlota: boolean;
+};
+
+/**
+ * Lo que el mapa de transportistas muestra para elegir a quién escribirle sin
+ * revelar quién es: reputación, antigüedad y viajes hechos en la app. Nada de
+ * nombre ni contacto (ver app/(empresa)/empresa/transportistas/page.tsx).
+ */
+export async function findConfianzaTransportistas(
+  userIds: string[],
+): Promise<Map<string, ConfianzaTransportista>> {
+  if (userIds.length === 0) return new Map();
+  const [usuarios, viajes] = await Promise.all([
+    db.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, ratingPromedio: true, ratingCantidad: true, emailVerified: true, createdAt: true, esFlota: true },
+    }),
+    // Mismo criterio que contarViajesFinalizados: postulaciones aceptadas de cargas finalizadas.
+    db.postulacion.groupBy({
+      by: ["transportistaId"],
+      where: { transportistaId: { in: userIds }, estado: "ACEPTADA", carga: { estado: "FINALIZADA" } },
+      _count: { _all: true },
+    }),
+  ]);
+  const viajesPorId = new Map(viajes.map((v) => [v.transportistaId, v._count._all]));
+  return new Map(
+    usuarios.map((u) => [
+      u.id,
+      {
+        ratingPromedio: u.ratingPromedio,
+        ratingCantidad: u.ratingCantidad,
+        emailVerified: u.emailVerified,
+        miembroDesde: u.createdAt.toISOString(),
+        viajesRealizados: viajesPorId.get(u.id) ?? 0,
+        esFlota: u.esFlota,
+      },
+    ]),
+  );
+}
+
+export const CONFIANZA_VACIA: ConfianzaTransportista = {
+  ratingPromedio: null,
+  ratingCantidad: 0,
+  emailVerified: false,
+  miembroDesde: null,
+  viajesRealizados: 0,
+  esFlota: false,
+};
+
 /** Datos públicos de reputación: nada de contacto, solo nombre y calificaciones. */
 export async function findPerfilPublico(userId: string) {
   return db.user.findUnique({
