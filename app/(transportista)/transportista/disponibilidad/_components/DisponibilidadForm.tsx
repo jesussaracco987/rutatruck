@@ -6,19 +6,21 @@ import { useRouter } from "next/navigation";
 import { radiosConActual } from "@/lib/radios";
 
 const VEHICULO_BASE = [
-  { value: "tolva_cerealera", label: "Tolva cerealera", emoji: "🌾", hasVariant: true },
-  { value: "batea",           label: "Batea",           emoji: "🪣", hasVariant: true },
-  { value: "chasis_acoplado", label: "Chasis c/Acoplado", emoji: "🚛", hasVariant: true },
-  { value: "semirremolque",   label: "Semirremolque",   emoji: "🚚", hasVariant: true },
-  { value: "jaula_ganadera",  label: "Jaula ganadera",  emoji: "🐄", hasVariant: false },
-  { value: "sider",           label: "Sider",           emoji: "📦", hasVariant: false },
+  { value: "utilitario",      label: "Utilitario",      emoji: "🚐", hasVariant: false },
+  { value: "camioneta",       label: "Camioneta",       emoji: "🛻", hasVariant: false },
   { value: "furgon",          label: "Furgón",          emoji: "🚐", hasVariant: false },
   { value: "playo",           label: "Playo",           emoji: "🛻", hasVariant: false },
+  { value: "sider",           label: "Sider",           emoji: "📦", hasVariant: false },
+  { value: "chasis_acoplado", label: "Chasis c/Acoplado", emoji: "🚛", hasVariant: true },
+  { value: "semirremolque",   label: "Semirremolque",   emoji: "🚚", hasVariant: true },
   { value: "frigorifico",     label: "Frigorífico",     emoji: "❄️", hasVariant: false },
+  { value: "volcador",        label: "Volcador",        emoji: "⬆️", hasVariant: false },
+  { value: "batea",           label: "Batea",           emoji: "🪣", hasVariant: true },
   { value: "cisterna",        label: "Cisterna",        emoji: "🛢️", hasVariant: false },
   { value: "portacontenedor", label: "Portacontenedor", emoji: "🏗️", hasVariant: false },
-  { value: "carreton",        label: "Carretón",        emoji: "🚜", hasVariant: false },
-  { value: "volcador",        label: "Volcador",        emoji: "⬆️", hasVariant: false },
+  { value: "carreton",        label: "Carretón",        emoji: "🚛", hasVariant: false },
+  { value: "tolva_cerealera", label: "Tolva",           emoji: "🚛", hasVariant: true },
+  { value: "jaula_ganadera",  label: "Jaula",           emoji: "🚛", hasVariant: false },
 ];
 
 const VARIANTE = [
@@ -104,7 +106,7 @@ export default function DisponibilidadForm({ inicial, vigenteInicial = false }: 
   const [radioKm, setRadioKm] = useState<number | null>(inicial?.radioKm ?? 50);
   const [regresoVacio, setRegresoVacio] = useState(inicial?.regresoVacio ?? false);
   const [buscaCarga, setBuscaCarga] = useState(inicial?.buscaCarga ?? false);
-  const [voyAPuerto, setVoyAPuerto] = useState(inicial?.voyAPuerto ?? false);
+  const voyAPuerto = inicial?.voyAPuerto ?? false;
   const [disponibleHoy, setDisponibleHoy] = useState(inicial?.disponibleHoy ?? false);
   const [salidaDesde, setSalidaDesde] = useState(inicial?.salidaDesde ?? "");
   const [salidaDestino, setSalidaDestino] = useState(inicial?.salidaDestino ?? "");
@@ -317,7 +319,6 @@ export default function DisponibilidadForm({ inicial, vigenteInicial = false }: 
           {[
             { key: "regresoVacio", label: "Regreso vacío", state: regresoVacio, set: setRegresoVacio },
             { key: "buscaCarga", label: "Busco carga", state: buscaCarga, set: setBuscaCarga },
-            { key: "voyAPuerto", label: "Voy hacia puerto", state: voyAPuerto, set: setVoyAPuerto },
             { key: "disponibleHoy", label: "Disponible hoy", state: disponibleHoy, set: setDisponibleHoy },
           ].map((b) => (
             <button

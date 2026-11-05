@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "prisma migrate deploy && prisma generate && next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "evaluar-asistente": "npx -y tsx --conditions=react-server scripts/evaluar-asistente/evaluar.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",

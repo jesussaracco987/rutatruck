@@ -8,6 +8,10 @@ export type Location = { lat: number; lng: number; name: string };
 interface Props {
   value: Location | null;
   onChange: (loc: Location | null) => void;
+  /** Dónde abrir el mapa cuando todavía no hay un punto marcado. */
+  centroInicial?: { lat: number; lng: number } | null;
+  /** Mapa siempre abierto, para seguir ajustando el punto después de marcarlo. */
+  mapaFijo?: boolean;
 }
 
 const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "";
@@ -50,14 +54,15 @@ async function reverseGeocode(lat: number, lng: number): Promise<string> {
   return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
 }
 
-export default function LocationPicker({ value, onChange }: Props) {
-  const [showMap, setShowMap] = useState(false);
+export default function LocationPicker({ value, onChange, centroInicial, mapaFijo = false }: Props) {
+  const [showMap, setShowMap] = useState(mapaFijo);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [geoLoading, setGeoLoading] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapboxMap | null>(null);
   const markerRef = useRef<MapboxMarker | null>(null);
+  const crearMarker = useRef<(() => MapboxMarker) | null>(null);
 
   // Init / destroy map when showMap toggles
   useEffect(() => {
@@ -76,10 +81,11 @@ export default function LocationPicker({ value, onChange }: Props) {
 
       mapboxgl.accessToken = MAPBOX_TOKEN;
 
-      const center: [number, number] = value
-        ? [value.lng, value.lat]
+      const punto = value ?? centroInicial;
+      const center: [number, number] = punto
+        ? [punto.lng, punto.lat]
         : [-63.6167, -38.4161];
-      const zoom = value ? 10 : 3.5;
+      const zoom = value ? 14 : punto ? 11 : 3.5;
 
       const map = new mapboxgl.Map({
         container: mapContainerRef.current,
@@ -89,6 +95,7 @@ export default function LocationPicker({ value, onChange }: Props) {
         language: "es",
       });
       mapRef.current = map;
+      crearMarker.current = () => new mapboxgl.Marker({ color: "#06342A" });
 
       map.addControl(new mapboxgl.NavigationControl(), "top-right");
 
@@ -138,7 +145,13 @@ export default function LocationPicker({ value, onChange }: Props) {
         const name = await reverseGeocode(lat, lng);
         onChange({ lat, lng, name });
         setGpsLoading(false);
-        setShowMap(false);
+        if (mapaFijo && mapRef.current) {
+          markerRef.current ??= crearMarker.current?.().addTo(mapRef.current) ?? null;
+          markerRef.current?.setLngLat([lng, lat]);
+          mapRef.current.flyTo({ center: [lng, lat], zoom: 15 });
+        } else {
+          setShowMap(false);
+        }
       },
       () => {
         setGpsError("No se pudo obtener la ubicación. Verificá los permisos del navegador.");
@@ -155,7 +168,7 @@ export default function LocationPicker({ value, onChange }: Props) {
   }
 
   // ── Confirmed state ──────────────────────────────────────────────────────────
-  if (value) {
+  if (value && !mapaFijo) {
     return (
       <div
         className="flex items-center justify-between gap-3 rounded-xl border px-4 py-3"
@@ -189,7 +202,7 @@ export default function LocationPicker({ value, onChange }: Props) {
   // ── Picker state ─────────────────────────────────────────────────────────────
   return (
     <div className="space-y-2">
-      <div className="grid grid-cols-2 gap-2">
+      <div className={`grid gap-2 ${mapaFijo ? "grid-cols-1" : "grid-cols-2"}`}>
         {/* GPS button */}
         <button
           type="button"
@@ -212,7 +225,7 @@ export default function LocationPicker({ value, onChange }: Props) {
         </button>
 
         {/* Map toggle button */}
-        <button
+        {!mapaFijo && <button
           type="button"
           onClick={() => setShowMap((v) => !v)}
           className="flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-sm font-medium transition-all cursor-pointer"
@@ -226,7 +239,7 @@ export default function LocationPicker({ value, onChange }: Props) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
           </svg>
           <span>{showMap ? "Ocultar mapa" : "Ver en mapa"}</span>
-        </button>
+        </button>}
       </div>
 
       {gpsError && (
@@ -254,7 +267,7 @@ export default function LocationPicker({ value, onChange }: Props) {
                 Resolviendo nombre de la ubicación...
               </>
             ) : (
-              "Hacé clic en el mapa para marcar la ubicación"
+              value ? value.name : "Tocá el mapa para marcar la ubicación"
             )}
           </div>
         </div>

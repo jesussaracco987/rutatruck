@@ -52,7 +52,8 @@ export default function RepetirCargaButton({ carga }: Props) {
       fechaCupo: "",
     };
     localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
-    router.push("/empresa/cargas/nueva");
+    // El borrador lo restaura el formulario, no el chat.
+    router.push("/empresa/cargas/nueva?modo=formulario");
   }
 
   return (

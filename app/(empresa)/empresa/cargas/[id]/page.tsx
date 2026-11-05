@@ -1,3 +1,4 @@
+import { formatFechaDia } from "@/lib/fechas";
 import type { CSSProperties } from "react";
 import { redirect } from "next/navigation";
 import Link from "next/link";
@@ -329,9 +330,9 @@ export default async function CargaDetallePage({
               carga.tipoCargaDetalle ? ["Especificación", carga.tipoCargaDetalle] : null,
               carga.peso !== null ? [carga.pesoUnidad === "kg" ? "kg" : carga.pesoUnidad === "bulto" ? "Bulto" : "Tonelada", `${carga.peso} ${carga.pesoUnidad === "kg" ? "kg" : carga.pesoUnidad === "bulto" ? "bultos" : "tn"}`] : null,
               ["Presupuesto", carga.presupuesto !== null ? `$${carga.presupuesto.toLocaleString("es-AR")}` : "A acordar"],
-              ["Fecha de carga", carga.fechaCarga.toLocaleDateString("es-AR")],
+              ["Fecha de carga", formatFechaDia(carga.fechaCarga)],
               carga.fechaCupo
-                ? ["Fecha de cupo", carga.fechaCupo.toLocaleDateString("es-AR")]
+                ? ["Fecha de entrega", formatFechaDia(carga.fechaCupo)]
                 : null,
               carga.preferenciaCamion ? ["Preferencia de camión", carga.preferenciaCamion] : null,
               carga.descripcion ? ["Descripción", carga.descripcion] : null,

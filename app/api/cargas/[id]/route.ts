@@ -41,7 +41,7 @@ export async function PUT(
   }
 
   if (fechaCupo && String(fechaCupo) !== "" && new Date(String(fechaCupo)) < new Date(String(fechaCarga))) {
-    return NextResponse.json({ error: "La fecha de cupo no puede ser anterior a la fecha de carga" }, { status: 400 });
+    return NextResponse.json({ error: "La fecha de entrega no puede ser anterior a la fecha de carga" }, { status: 400 });
   }
 
   await db.carga.update({

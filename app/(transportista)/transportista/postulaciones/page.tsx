@@ -1,3 +1,4 @@
+import { formatFechaDia } from "@/lib/fechas";
 import Link from "next/link";
 import { verifySession } from "@/lib/dal";
 import { db } from "@/lib/db";
@@ -244,7 +245,7 @@ export default async function MisPostulacionesPage({
                         {/* Meta */}
                         <div className="flex items-center gap-3 mt-2 flex-wrap">
                           <span className="text-xs" style={{ color: "#9CA3AF" }}>
-                            {p.carga.fechaCarga.toLocaleDateString("es-AR")}
+                            {formatFechaDia(p.carga.fechaCarga)}
                           </span>
                           <span className="text-xs" style={{ color: "#9CA3AF" }}>·</span>
                           <span className="text-xs capitalize" style={{ color: "#9CA3AF" }}>

@@ -3,6 +3,7 @@ import { getSession } from "@/lib/dal";
 import { isEmpresa } from "@/lib/roles";
 import { parseCargaInput } from "@/lib/carga-input";
 import { publicarCarga } from "@/lib/services/carga.service";
+import { registrarPublicada } from "@/lib/services/conversacion-chat.service";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -33,6 +34,8 @@ export async function POST(req: NextRequest) {
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
+  // Solo viene cuando publica el chat del panel; el formulario no lo manda.
+  await registrarPublicada(body.conversacionId, "cargaId" in result ? result.cargaId : undefined);
   return NextResponse.json(
     "cargaId" in result ? { cargaId: result.cargaId } : { url: result.url },
     { status: 201 },

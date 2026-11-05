@@ -39,6 +39,7 @@ import {
   DIAS_ASIGNADA_ABANDONADA,
   DIAS_EN_CONFIRMACION_ABANDONADA,
 } from "@/lib/plazos";
+import { inicioDeHoyArgentina } from "@/lib/fechas";
 
 type CargaData = Omit<Prisma.CargaUncheckedCreateInput, "estado" | "pagado"> & {
   titulo: string;
@@ -318,12 +319,12 @@ export async function enviarRecordatoriosCompletar() {
         cargas.length === 1
           ? {
               title: "Marcá tu viaje como completado",
-              body: `"${cargas[0].titulo}" ya pasó su fecha de cupo. Marcalo como completado para cerrar la operación.`,
+              body: `"${cargas[0].titulo}" ya pasó su fecha de entrega. Marcalo como completado para cerrar la operación.`,
               url: "/transportista/dashboard",
             }
           : {
               title: "Tenés viajes por marcar como completados",
-              body: `${cargas.length} cargas ya pasaron su fecha de cupo. Revisalas y marcalas como completadas.`,
+              body: `${cargas.length} cargas ya pasaron su fecha de entrega. Revisalas y marcalas como completadas.`,
               url: "/transportista/dashboard",
             };
       return sendPushToUser(transportistaId, payload);
@@ -351,11 +352,11 @@ export async function enviarRecordatoriosSinPostulantes() {
   const cargas = await findCargasProximasSinAceptar(limite, umbral);
   if (cargas.length === 0) return { ok: true, cargas: 0 };
 
-  const ahora = new Date();
+  const hoy = inicioDeHoyArgentina();
 
   await Promise.allSettled(
     cargas.map((c) => {
-      const vencida = c.fechaCarga < ahora;
+      const vencida = c.fechaCarga < hoy;
       return sendPushToUser(c.empresaId, {
         title: vencida ? "Carga sin transportista, fecha vencida" : "Tu carga está por vencer sin postulantes",
         body: vencida
@@ -385,9 +386,7 @@ export async function enviarRecordatoriosSinPostulantes() {
  * fechada hoy mismo cuando el cron corre a las 14:00.
  */
 export async function cancelarCargasVencidasSinAceptar() {
-  const inicioDeHoy = new Date();
-  inicioDeHoy.setUTCHours(0, 0, 0, 0);
-  const cargas = await findCargasVencidasParaCancelar(inicioDeHoy);
+  const cargas = await findCargasVencidasParaCancelar(inicioDeHoyArgentina());
   if (cargas.length === 0) return { ok: true, cargas: 0 };
 
   await cancelarCargas(cargas.map((c) => c.id));
@@ -426,9 +425,7 @@ export async function cancelarCargasVencidasSinAceptar() {
  * que pasa de nuevo por el checkout.
  */
 export async function cancelarPendientesDePagoVencidas() {
-  const inicioDeHoy = new Date();
-  inicioDeHoy.setUTCHours(0, 0, 0, 0);
-  const cargas = await findCargasPendientePagoVencidas(inicioDeHoy);
+  const cargas = await findCargasPendientePagoVencidas(inicioDeHoyArgentina());
   if (cargas.length === 0) return { ok: true, cargas: 0 };
 
   await cancelarCargas(cargas.map((c) => c.id));
@@ -485,8 +482,9 @@ export async function purgarCargasCanceladas() {
  * mueve ningún cobro. El flete se arregla entre las partes fuera de la app.
  */
 export async function cerrarViajesAbandonados() {
-  const umbralAsignada = new Date(
-    Date.now() - DIAS_ASIGNADA_ABANDONADA * 24 * 60 * 60 * 1000,
+  // DIAS_ASIGNADA_ABANDONADA días enteros después del día del viaje, en hora argentina.
+  const umbralAsignada = inicioDeHoyArgentina(
+    new Date(Date.now() - DIAS_ASIGNADA_ABANDONADA * 24 * 60 * 60 * 1000),
   );
   const asignadas = await findCargasAsignadasAbandonadas(umbralAsignada);
 
@@ -591,13 +589,12 @@ export async function reactivarCargaCancelada(
     };
   }
 
-  const inicioDeHoy = new Date();
-  inicioDeHoy.setUTCHours(0, 0, 0, 0);
-  if (fechaCarga < inicioDeHoy) {
+  // Entre las 21 h y la medianoche el día UTC ya es mañana: rechazaría reactivar para hoy.
+  if (fechaCarga < inicioDeHoyArgentina()) {
     return { ok: false, status: 400, error: "La fecha de carga tiene que ser futura" };
   }
   if (fechaCupo && fechaCupo < fechaCarga) {
-    return { ok: false, status: 400, error: "La fecha de cupo no puede ser anterior a la fecha de carga" };
+    return { ok: false, status: 400, error: "La fecha de entrega no puede ser anterior a la fecha de carga" };
   }
 
   await reactivarCarga(cargaId, fechaCarga, fechaCupo);

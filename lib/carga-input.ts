@@ -42,7 +42,7 @@ export function parseCargaInput(body: Record<string, unknown>) {
   if (fechaCupo && new Date(fechaCupo) < new Date(fechaCarga)) {
     return {
       ok: false as const,
-      error: "La fecha de cupo no puede ser anterior a la fecha de carga",
+      error: "La fecha de entrega no puede ser anterior a la fecha de carga",
     };
   }
 

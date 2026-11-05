@@ -16,7 +16,7 @@ export default function PoliticaDePrivacidadPage() {
         Política de Privacidad
       </h1>
       <p className="text-sm mb-8" style={{ color: "var(--text-muted)" }}>
-        Última actualización: octubre 2026
+        Última actualización: noviembre 2026
       </p>
 
       <section className="mb-8">
@@ -32,6 +32,13 @@ export default function PoliticaDePrivacidadPage() {
           <li>Ubicación geográfica en tiempo real (solo para transportistas, con tu consentimiento).</li>
           <li>Información sobre cargas publicadas y postulaciones realizadas.</li>
           <li>Datos de uso de la aplicación (páginas visitadas, acciones realizadas).</li>
+          <li>
+            Lo que escribís o grabás en el chat para publicar una carga. Lo procesa OpenAI, nuestro
+            proveedor de inteligencia artificial, solo para interpretar tu pedido. Los audios se pasan
+            a texto en el momento y no los guardamos. Guardamos el texto de la conversación hasta 90
+            días para revisar dónde se equivoca el asistente y mejorarlo; solo lo ve el equipo de
+            ClickCargo. No incluyas datos personales que no hagan falta para el envío.
+          </li>
           <li>
             Cómo llegaste a ClickCargo (por ejemplo, desde un anuncio o un enlace compartido) y
             la primera página que visitaste.

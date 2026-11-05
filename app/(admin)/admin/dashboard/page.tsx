@@ -117,6 +117,17 @@ export default async function AdminDashboard() {
           </div>
         </div>
 
+        <a
+          href="/admin/asistente"
+          className="block rounded-xl border p-6 transition-opacity hover:opacity-80"
+          style={{ backgroundColor: "#112424", borderColor: "var(--primary-20)" }}
+        >
+          <h3 className="font-semibold text-white mb-1">Asistente de publicación →</h3>
+          <p className="text-sm" style={{ color: "#A8C5C5" }}>
+            Conversaciones del chat, qué corrige la gente y dónde abandona.
+          </p>
+        </a>
+
         <div
           className="rounded-xl border p-6"
           style={{ backgroundColor: "#112424", borderColor: "#1E3838" }}

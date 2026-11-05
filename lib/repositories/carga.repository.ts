@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { inicioDeHoyArgentina } from "@/lib/fechas";
 import type { Prisma } from "@prisma/client";
 
 const SELECT_CARGA_PUBLICADA = {
@@ -262,7 +263,8 @@ export async function findCargasEnViajeDeTransportista(transportistaId: string) 
 }
 
 export async function findCargasVencidasSinCompletar(umbralReintento: Date) {
-  const ahora = new Date();
+  // Por completar recién cuando terminó el día del viaje en Argentina.
+  const ahora = inicioDeHoyArgentina();
   return db.carga.findMany({
     where: {
       estado: "ASIGNADA",
@@ -498,7 +500,8 @@ export async function eliminarCargas(cargaIds: number[]) {
 }
 
 export async function findCargasAsignadasVencidasDeTransportista(transportistaId: string) {
-  const ahora = new Date();
+  // Mismo criterio que findCargasVencidasSinCompletar: el día del viaje ya terminó.
+  const ahora = inicioDeHoyArgentina();
   return db.carga.findMany({
     where: {
       estado: "ASIGNADA",

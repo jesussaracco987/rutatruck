@@ -136,15 +136,42 @@ self.addEventListener("pushsubscriptionchange", (event) => {
   );
 });
 
+function vistaDe(url) {
+  const { origin, pathname } = new URL(url);
+  if (origin !== self.location.origin) return null;
+  if (pathname.startsWith("/empresa")) return "empresa";
+  if (pathname.startsWith("/transportista")) return "transportista";
+  return null;
+}
+
+// Una cuenta dual (EMPRESA_TRANSPORTISTA) en la vista empresa que toca un aviso
+// de carga pasa a la vista transportista. En vez de navegar acá, se le pide a
+// la pestaña que lo haga con la transición de "Cambiando a …"
+// (NotificationRoleSwitch). Resuelve false si la página no contesta — p.ej. una
+// versión vieja sin el listener — y entonces navega el SW como antes.
+function pedirCambioDeVista(client, url, toRole) {
+  return new Promise((resolve) => {
+    const canal = new MessageChannel();
+    const timer = setTimeout(() => resolve(false), 1000);
+    canal.port1.onmessage = () => { clearTimeout(timer); resolve(true); };
+    const { pathname, search, hash } = new URL(url);
+    client.postMessage({ type: "CAMBIO_DE_VISTA", url: pathname + search + hash, toRole }, [canal.port2]);
+  });
+}
+
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const rawUrl = event.notification.data?.url ?? "/";
   const url = rawUrl.startsWith("http") ? rawUrl : self.location.origin + rawUrl;
   event.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then((list) => {
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then(async (list) => {
       const existing = list.find((c) => c.url.startsWith(self.location.origin) && "focus" in c);
-      if (existing) { existing.focus(); existing.navigate(url); return; }
-      return clients.openWindow(url);
+      if (!existing) return clients.openWindow(url);
+      existing.focus();
+      const desde = vistaDe(existing.url);
+      const hacia = vistaDe(url);
+      if (desde && hacia && desde !== hacia && (await pedirCambioDeVista(existing, url, hacia))) return;
+      return existing.navigate(url);
     })
   );
 });

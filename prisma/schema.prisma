@@ -233,6 +233,60 @@ model EmailVerificationCode {
   @@index([userId])
 }
 
+/// Código por email de la publicación por chat: se pide antes de que exista la
+/// cuenta, por eso va por email y no por usuario. Guarda el hash, nunca el código.
+model CodigoPublicacion {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  codigoHash String
+  intentos   Int      @default(0)
+  expiraEn   DateTime
+  creadoEn   DateTime @default(now())
+}
+
+/// Contador por ventana de tiempo: límites por visitante y tope diario de tokens
+/// de OpenAI. Va en la base porque cada función serverless tiene su propia memoria.
+model LimiteUso {
+  clave   String
+  ventana DateTime
+  conteo  Int      @default(0)
+
+  @@id([clave, ventana])
+  @@index([ventana])
+}
+
+/// Una conversación con el asistente de publicación, para medir dónde se equivoca.
+/// Lo que la persona corrige en el resumen (borradorConfirmado vs borradorAsistente)
+/// y en los audios es el error del bot. Se borra a los 90 días (cron limpiar-chat).
+/// Sin relaciones: borrar la carga o la cuenta no tiene que tocar las métricas.
+model ConversacionChat {
+  /// Lo genera el navegador al primer mensaje.
+  id                 String   @id
+  /// Hash del visitante (ver claveVisitante), nunca la IP.
+  visitante          String
+  userId             String?
+  /// "home" (sin cuenta) o "panel" (empresa con sesión).
+  origen             String
+  /// [{ rol, texto, dictado? }]: dictado es lo que transcribió el audio antes de que lo editaran.
+  mensajes           Json     @default("[]")
+  borradorAsistente  Json?
+  borradorConfirmado Json?
+  camposCorregidos   String[] @default([])
+  /// chat < resumen < mapa < contacto < publicada
+  pasoMaximo         String   @default("chat")
+  preguntas          Int      @default(0)
+  audios             Int      @default(0)
+  audiosCorregidos   Int      @default(0)
+  tokens             Int      @default(0)
+  /// Último motivo por el que el asistente no respondió (límite, OpenAI caído).
+  fallo              String?
+  cargaId            Int?
+  creadaEn           DateTime @default(now())
+  actualizadaEn      DateTime @updatedAt
+
+  @@index([creadaEn])
+}
+
 model ConfigApp {
   id                Int    @id @default(1)
   comisionTipo      String @default("FIJO")

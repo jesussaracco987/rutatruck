@@ -81,6 +81,8 @@ const iconosPorCategoria: Record<string, string> = {
   paqueteria: "📦",
   mercaderia: "🛒",
   materiales: "🧱",
+  mudanza: "🛋️",
+  maquinaria: "🏗️",
   granos: "🌾",
   frutas: "🍎",
   verduras: "🥬",

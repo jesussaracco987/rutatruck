@@ -307,7 +307,7 @@ export default function EditarCargaPanel({ carga, sinTransportista }: { carga: C
             defaultValue={carga.tipoCargaDetalle ?? ""}
             className={inputClass}
             style={inputStyle}
-            placeholder="Ej: Maíz, Soja, Banana..."
+            placeholder="Ej: Pallets, cajas, muebles..."
           />
         </div>
 
@@ -344,7 +344,7 @@ export default function EditarCargaPanel({ carga, sinTransportista }: { carga: C
               className={labelClass}
               style={labelStyle}
             >
-              Fecha de cupo
+              Fecha de entrega
             </label>
             <input
               id="edit-fechaCupo"
