@@ -6,6 +6,8 @@ import { decrypt } from "@/lib/session";
 import truckImg from "@/app/assets/truck2.jpg";
 import { FREE_TIER, diasRestantesFreeTier } from "@/lib/free-tier";
 import { OG_IMAGE, absoluteUrl } from "@/lib/site";
+import { getPrecioPublicacion } from "@/lib/comision";
+import ChatPublicar from "@/app/_components/publicar-chat/ChatPublicar";
 import JsonLd from "@/app/_components/JsonLd";
 import type { Metadata } from "next";
 
@@ -43,26 +45,27 @@ export default async function LandingPage() {
   if (session?.role) redirect(dashboardByRole[session.role]);
   const dias = diasRestantesFreeTier();
   const gratis = FREE_TIER && dias !== 0;
+  const precioPublicacion = FREE_TIER ? 0 : await getPrecioPublicacion();
   return (
     <div
       className="min-h-screen flex items-center justify-center"
       style={{ backgroundColor: "#060F0F" }}
     >
       <JsonLd />
-      {/* Celular: columna angosta (imagen arriba, botones abajo).
+      {/* Celular: columna angosta (imagen arriba, chat abajo).
           Escritorio (lg): pantalla partida, imagen a la izquierda y panel a la derecha. */}
       <div
         className="relative w-full sm:max-w-[420px] lg:max-w-none flex flex-col lg:flex-row overflow-hidden"
         style={{ minHeight: "100svh" }}
       >
         {/* Image section */}
-        <div className="relative flex-shrink-0 overflow-hidden h-[56svh] lg:h-auto lg:min-h-screen lg:w-1/2 xl:w-[55%]">
+        <div className="relative flex-shrink-0 overflow-hidden h-[30svh] lg:h-auto lg:min-h-screen lg:w-1/2 xl:w-[55%]">
           <Image
             src={truckImg}
             alt=""
             fill
             sizes="(min-width: 1280px) 55vw, (min-width: 1024px) 50vw, 420px"
-            className="object-cover object-[center_45%] lg:object-[center_60%]"
+            className="object-cover object-[center_72%] lg:object-[center_60%]"
             priority
             quality={88}
           />
@@ -84,7 +87,7 @@ export default async function LandingPage() {
           />
 
           {/* Logo — top center */}
-          <div className="absolute top-8 lg:top-14 left-0 right-0 flex flex-col items-center">
+          <div className="absolute top-5 lg:top-14 left-0 right-0 flex flex-col items-center">
             <h1
               className="font-black leading-none mb-1 text-[2.6rem] lg:text-6xl"
               style={{ letterSpacing: "-0.01em", textShadow: "0 2px 12px rgba(0,0,0,0.9), 0 0 30px rgba(0,0,0,0.7)" }}
@@ -101,38 +104,18 @@ export default async function LandingPage() {
           </div>
         </div>
 
-        {/* Dark section — buttons */}
+        {/* Dark section — chat y accesos */}
         <div
           className="flex flex-col justify-center flex-1 px-6 py-8 lg:px-16 xl:px-24"
           style={{ backgroundColor: "#060F0F" }}
         >
           <div className="w-full lg:max-w-md lg:mx-auto flex flex-col gap-3">
-          {/* Solo escritorio: en la PC sobra lugar para explicar qué es antes de elegir */}
-          <div className="hidden lg:block mb-6">
-            <h2 className="text-4xl font-black leading-tight text-white">
-              Cargas y camiones, <span style={{ color: "#4ADE80" }}>conectados</span>.
-            </h2>
-            <p className="mt-4 text-base leading-relaxed" style={{ color: "#9CA3AF" }}>
-              Desde un flete chico hasta varios camiones: quien necesita enviar y quien transporta, en un solo lugar.
-            </p>
-            <ul className="mt-6 space-y-3 text-sm" style={{ color: "#D1D5DB" }}>
-              {[
-                "Publicá tu carga y recibí postulaciones de transportistas",
-                "Encontrá viajes cerca, con avisos por zona",
-                "Chat directo para coordinar sin intermediarios",
-              ].map((item) => (
-                <li key={item} className="flex items-start gap-3">
-                  <svg className="w-5 h-5 flex-shrink-0 mt-px" fill="none" stroke="#4ADE80" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                  </svg>
-                  {item}
-                </li>
-              ))}
-            </ul>
-            <p className="mt-8 text-xs font-semibold uppercase tracking-wider" style={{ color: "#6B7280" }}>
-              ¿Qué necesitás hacer?
-            </p>
-          </div>
+          {/* Solo escritorio: en la PC sobra lugar para explicar qué es */}
+          <p className="hidden lg:block mb-2 text-base leading-relaxed" style={{ color: "#D1D5DB" }}>
+            Desde una caja hasta varios camiones: cualquier carga, a cualquier punto del país.
+          </p>
+
+          <ChatPublicar freeTier={FREE_TIER} precioPublicacion={precioPublicacion} />
 
           <Link
             href="/registro?rol=transportista"
@@ -152,31 +135,6 @@ export default async function LandingPage() {
               QUIERO TRANSPORTAR
               <span className="text-xs font-medium normal-case tracking-normal" style={{ color: "#4B5563" }}>
                 Tengo un vehículo y busco viajes
-              </span>
-            </span>
-          </Link>
-
-          <Link
-            href="/publicar"
-            className="flex items-center gap-4 w-full px-5 py-4 rounded-2xl font-bold text-sm tracking-wide border transition-colors hover:border-white/40 active:opacity-80 lg:py-5 lg:text-base"
-            style={{
-              backgroundColor: "rgba(255,255,255,0.06)",
-              color: "white",
-              borderColor: "rgba(255,255,255,0.15)",
-            }}
-          >
-            <span
-              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: "#3B82F618" }}
-            >
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-              </svg>
-            </span>
-            <span className="flex flex-col">
-              QUIERO ENVIAR
-              <span className="text-xs font-medium normal-case tracking-normal" style={{ color: "#9CA3AF" }}>
-                Desde un flete chico hasta varios camiones
               </span>
             </span>
           </Link>

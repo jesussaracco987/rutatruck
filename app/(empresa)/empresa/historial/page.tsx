@@ -1,3 +1,4 @@
+import { formatFechaDia } from "@/lib/fechas";
 import Link from "next/link";
 import { verifySession } from "@/lib/dal";
 import { db } from "@/lib/db";
@@ -105,7 +106,7 @@ export default async function EmpresaHistorialPage() {
                     </div>
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wide mb-0.5" style={{ color: "#6B7280" }}>Fecha carga</p>
-                      <p className="text-sm font-bold text-gray-900">{carga.fechaCarga.toLocaleDateString("es-AR")}</p>
+                      <p className="text-sm font-bold text-gray-900">{formatFechaDia(carga.fechaCarga)}</p>
                     </div>
                     {carga.presupuesto !== null && (
                       <div>

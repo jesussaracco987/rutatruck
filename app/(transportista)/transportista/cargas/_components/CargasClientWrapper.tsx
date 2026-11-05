@@ -1,5 +1,6 @@
 "use client";
 
+import { formatFechaDia } from "@/lib/fechas";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -52,7 +53,7 @@ function OfertaPrivadaCard({ carga, onRespond }: { carga: CargaPrivada; onRespon
         <p className="font-bold text-gray-900 mb-1">{carga.origen} → {carga.destino}</p>
         <p className="text-sm text-gray-600 mb-1">{carga.titulo} · {TIPO_LABELS[carga.tipoCarga] ?? carga.tipoCarga}</p>
         <div className="flex items-center gap-4 text-xs text-gray-500 mb-3">
-          <span>📅 {new Date(carga.fechaCarga).toLocaleDateString("es-AR")}</span>
+          <span>📅 {formatFechaDia(carga.fechaCarga)}</span>
           <span>💰 {carga.presupuesto !== null ? `$${carga.presupuesto.toLocaleString("es-AR")}` : "A acordar"}</span>
         </div>
         {carga.descripcion && (
@@ -339,7 +340,7 @@ export default function CargasClientWrapper({
                           <div className="text-right">
                             <p className="text-xs font-semibold uppercase tracking-wide mb-0.5" style={{ color: "#6B7280" }}>Fecha</p>
                             <p className="text-sm font-bold text-gray-900">
-                              {new Date(carga.fechaCarga).toLocaleDateString("es-AR")}
+                              {formatFechaDia(carga.fechaCarga)}
                             </p>
                           </div>
                         </div>

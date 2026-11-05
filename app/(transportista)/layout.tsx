@@ -1,6 +1,7 @@
 import PushNotificationSetup from "./transportista/_components/PushNotificationSetup";
 import { AppShell } from "@/app/_components/AppShell";
 import { EventsProvider } from "@/app/_components/EventsProvider";
+import NotificationRoleSwitch from "@/app/_components/NotificationRoleSwitch";
 import { getSession } from "@/lib/dal";
 import { db } from "@/lib/db";
 import Link from "next/link";
@@ -42,6 +43,7 @@ export default function TransportistaGroupLayout({
   return (
     <EventsProvider vista="transportista">
       <PushNotificationSetup />
+      <NotificationRoleSwitch />
       <AppShell role="transportista" banner={<DisponibleBanner />}>
         {children}
       </AppShell>

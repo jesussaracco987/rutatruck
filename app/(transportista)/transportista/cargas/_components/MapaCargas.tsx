@@ -1,5 +1,6 @@
 "use client";
 
+import { formatFechaDia } from "@/lib/fechas";
 import { useEffect, useRef, useState } from "react";
 import type { Map as MapboxMap, Marker as MapboxMarker } from "mapbox-gl";
 import Link from "next/link";
@@ -213,7 +214,7 @@ function SelectedDetail({
           <div className="rounded-xl p-3 border" style={{ borderColor: "#E2E8E8" }}>
             <p className="text-xs font-semibold uppercase tracking-wide mb-0.5" style={{ color: "#6B7280" }}>Fecha</p>
             <p className="text-sm font-bold text-gray-900">
-              {new Date(carga.fechaCarga).toLocaleDateString("es-AR")}
+              {formatFechaDia(carga.fechaCarga)}
             </p>
           </div>
           {carga.cantidadCamiones > 1 && (

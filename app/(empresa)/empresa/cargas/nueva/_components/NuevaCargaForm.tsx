@@ -7,8 +7,9 @@ import LogoClickCargo from "@/app/_components/LogoClickCargo";
 import { enviarEvento } from "@/app/_components/Analytics";
 import LocationAutocomplete from "./LocationAutocomplete";
 import { TIPOS_CARGA, placeholderDetalleCarga } from "@/lib/tipos-carga";
+import { DRAFT_FORMULARIO_KEY } from "@/lib/chat-carga";
 
-const DRAFT_KEY = "clickcargo-nueva-carga-draft";
+const DRAFT_KEY = DRAFT_FORMULARIO_KEY;
 
 interface ContactoDefecto {
   nombre: string;
@@ -68,7 +69,10 @@ export default function NuevaCargaForm({
   errorInicial,
   freeTier,
   invitado = false,
+  selectorModo,
 }: {
+  /** En el panel, el selector para pasar al chat con el asistente. */
+  selectorModo?: React.ReactNode;
   contactoDefecto: ContactoDefecto;
   precioPublicacion: number;
   errorInicial?: string;
@@ -191,7 +195,7 @@ export default function NuevaCargaForm({
         // reintenta desde el panel, que restaura el borrador.
         if (data.cuentaCreada) {
           navigating = true;
-          router.push("/empresa/cargas/nueva");
+          router.push("/empresa/cargas/nueva?modo=formulario");
         }
         throw new Error(data.error ?? "Error al crear la carga");
       }
@@ -284,6 +288,8 @@ export default function NuevaCargaForm({
               : "Completá los datos del envío. Una vez procesado el pago de publicación, la carga quedará visible para transportistas."}
           </p>
         </div>
+
+        {selectorModo}
 
         {hasDraft && (
           <div
@@ -547,7 +553,7 @@ export default function NuevaCargaForm({
                   onChange={set("preferenciaCamion")}
                   className={inputClass}
                   style={inputStyle}
-                  placeholder="Ej: Camión jaula, semiremolque, etc."
+                  placeholder="Ej: Furgón, camioneta, semirremolque..."
                 />
               </div>
             </div>
@@ -586,7 +592,7 @@ export default function NuevaCargaForm({
                   className={labelClass}
                   style={labelStyle}
                 >
-                  Fecha de cupo
+                  Fecha de entrega
                 </label>
                 <input
                   id="fechaCupo"

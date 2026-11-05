@@ -183,7 +183,7 @@ function DetailPanel({
                 name="titulo"
                 value={form.titulo}
                 onChange={handleFormChange}
-                placeholder="Ej: Traslado de cereal a Buenos Aires"
+                placeholder="Ej: Traslado de mercadería a Buenos Aires"
                 className="w-full border rounded-lg px-3 py-2 text-sm"
                 style={{ borderColor: "#D1D5DB", color: "#111827" }}
               />
@@ -226,7 +226,7 @@ function DetailPanel({
                 name="tipoCarga"
                 value={form.tipoCarga}
                 onChange={handleFormChange}
-                placeholder="Ej: Cereal, Maquinaria, Hacienda..."
+                placeholder="Ej: Pallets, mudanza, maquinaria..."
                 className="w-full border rounded-lg px-3 py-2 text-sm"
                 style={{ borderColor: "#D1D5DB", color: "#111827" }}
               />

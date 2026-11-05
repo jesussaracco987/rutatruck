@@ -1,3 +1,4 @@
+import { formatFechaDia } from "@/lib/fechas";
 import { verifySession } from "@/lib/dal";
 import { db } from "@/lib/db";
 import Link from "next/link";
@@ -95,7 +96,7 @@ export default async function AdminDisputasPage() {
                   <div>
                     <p className="text-base font-bold text-white">{carga.titulo}</p>
                     <p className="text-sm mt-0.5" style={{ color: "#9CA3AF" }}>
-                      {carga.origen} → {carga.destino} · {carga.fechaCarga.toLocaleDateString("es-AR")}
+                      {carga.origen} → {carga.destino} · {formatFechaDia(carga.fechaCarga)}
                     </p>
                   </div>
 

@@ -1,3 +1,4 @@
+import { formatFechaDia } from "@/lib/fechas";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { verifySession } from "@/lib/dal";
@@ -236,9 +237,9 @@ export default async function CargaPublicaPage({
               carga.tipoCargaDetalle ? ["Especificación", carga.tipoCargaDetalle] : null,
               carga.volumen !== null ? ["Volumen", `${carga.volumen} m³`] : null,
               ["Presupuesto", carga.presupuesto !== null ? `$${carga.presupuesto.toLocaleString("es-AR")}` : "A acordar"],
-              ["Fecha de carga", carga.fechaCarga.toLocaleDateString("es-AR")],
+              ["Fecha de carga", formatFechaDia(carga.fechaCarga)],
               carga.fechaCupo
-                ? ["Fecha de cupo", carga.fechaCupo.toLocaleDateString("es-AR")]
+                ? ["Fecha de entrega", formatFechaDia(carga.fechaCupo)]
                 : null,
               carga.preferenciaCamion ? ["Preferencia de camión", carga.preferenciaCamion] : null,
               carga.descripcion ? ["Descripción", carga.descripcion] : null,

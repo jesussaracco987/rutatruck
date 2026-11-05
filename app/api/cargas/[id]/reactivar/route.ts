@@ -36,7 +36,7 @@ export async function POST(
   if (fechaCupo && String(fechaCupo) !== "") {
     nuevaFechaCupo = new Date(String(fechaCupo));
     if (isNaN(nuevaFechaCupo.getTime())) {
-      return NextResponse.json({ error: "Fecha de cupo inválida" }, { status: 400 });
+      return NextResponse.json({ error: "Fecha de entrega inválida" }, { status: 400 });
     }
   }
 

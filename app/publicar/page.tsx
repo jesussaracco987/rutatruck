@@ -31,7 +31,7 @@ export const metadata: Metadata = {
  */
 export default async function PublicarPage() {
   // Con sesión, el formulario de siempre (el proxy saca de ahí a quien no es empresa).
-  if (await getSession()) redirect("/empresa/cargas/nueva");
+  if (await getSession()) redirect("/empresa/cargas/nueva?modo=formulario");
 
   const precioPublicacion = await getPrecioPublicacion();
 

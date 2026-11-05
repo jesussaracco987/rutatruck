@@ -1,3 +1,4 @@
+import { formatFechaDia } from "@/lib/fechas";
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { verifySession } from "@/lib/dal";
@@ -494,7 +495,7 @@ export default async function CargasPage({
                             Fecha
                           </p>
                           <p className="text-sm font-bold text-gray-900">
-                            {carga.fechaCarga.toLocaleDateString("es-AR")}
+                            {formatFechaDia(carga.fechaCarga)}
                           </p>
                         </div>
                       </div>
