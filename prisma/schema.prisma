@@ -59,6 +59,20 @@ model DisponibilidadTransportista {
   disponibleHoy   Boolean  @default(false)
   salidaDesde     String?
   salidaDestino   String?
+  /// Coordenadas del viaje (origen → destino) para dibujarlo en el mapa y
+  /// saber por qué zonas pasa. Línea recta aproximada, no la ruta real.
+  salidaDesdeLat   Float?
+  salidaDesdeLng   Float?
+  salidaDestinoLat Float?
+  salidaDestinoLng Float?
+  /// Día en que está disponible / sale de viaje. Con fecha, la disponibilidad
+  /// vence al terminar ese día (hora Argentina); sin fecha rige la regla de
+  /// 24 h / 7 días (ver lib/disponibilidad.ts).
+  fecha           DateTime? @db.Date
+  /// Lugar que le queda: "vacio" | "parcial" | "chico" (ver lib/disponibilidad.ts).
+  espacio         String?
+  /// Texto libre: "2 pallets", "una caja de 1 m³".
+  espacioDetalle  String?
   activo          Boolean  @default(true)
   actualizadoEn   DateTime @updatedAt
   /// Cuándo pasó de no disponible (inexistente, desactivada o vencida) a vigente.

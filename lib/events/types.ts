@@ -69,6 +69,11 @@ export type Events = {
     lng: number;
     radioKm: number | null;
     disponibleHoy: boolean;
+    /** "YYYY-MM-DD" o null. */
+    fecha: string | null;
+    salidaDesde: string | null;
+    salidaDestino: string | null;
+    viaje: { origen: { lat: number; lng: number }; destino: { lat: number; lng: number } } | null;
   };
   "oferta-privada.creada": {
     transportistaId: string;

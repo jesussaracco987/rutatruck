@@ -60,3 +60,44 @@ export function enAlcance(
   // Si enZona() dio false, la zona está configurada completa.
   return haversineKm(zona.notifZonaLat!, zona.notifZonaLng!, lat, lng) <= radioPuntoKm;
 }
+
+type Punto = { lat: number; lng: number };
+
+/**
+ * Distancia (km) de un punto al segmento recto A→B. Proyección
+ * equirectangular centrada en el punto: para tramos de cientos de km dentro
+ * del país el error es chico frente a lo que se desvía la ruta real.
+ */
+export function distanciaASegmentoKm(p: Punto, a: Punto, b: Punto): number {
+  const kmLat = 110.57;
+  const kmLng = 111.32 * Math.cos((p.lat * Math.PI) / 180);
+  const ax = (a.lng - p.lng) * kmLng, ay = (a.lat - p.lat) * kmLat;
+  const bx = (b.lng - p.lng) * kmLng, by = (b.lat - p.lat) * kmLat;
+  const dx = bx - ax, dy = by - ay;
+  const len2 = dx * dx + dy * dy;
+  const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, -(ax * dx + ay * dy) / len2));
+  return Math.hypot(ax + t * dx, ay + t * dy);
+}
+
+/**
+ * Margen mínimo a cada lado de la línea del viaje. La línea es recta y la
+ * ruta no: sin este margen una empresa con radio chico quedaría afuera de un
+ * viaje que en la práctica le pasa por la puerta.
+ */
+export const CORREDOR_KM = 40;
+
+/**
+ * Km entre la zona del usuario y la línea del viaje, o null si el usuario no
+ * configuró zona.
+ */
+export function distanciaZonaAViajeKm(zona: Zona, origen: Punto, destino: Punto): number | null {
+  if (!tieneZonaConfigurada(zona)) return null;
+  return distanciaASegmentoKm({ lat: zona.notifZonaLat!, lng: zona.notifZonaLng! }, origen, destino);
+}
+
+/** El viaje pasa por la zona del usuario (radio de la zona o CORREDOR_KM, lo que sea mayor). */
+export function viajePasaPorZona(zona: Zona, origen: Punto, destino: Punto): boolean {
+  const d = distanciaZonaAViajeKm(zona, origen, destino);
+  if (d === null) return false;
+  return d <= Math.max(zona.notifRadioKm!, CORREDOR_KM);
+}

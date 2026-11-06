@@ -5,7 +5,8 @@ import { HamburgerMenu } from "@/app/_components/HamburgerMenu";
 import { BottomTabBar } from "@/app/_components/BottomTabBar";
 import type { TransportistaDisp } from "./_components/MapaTransportistas";
 import MapaTransportistasWrapper from "./_components/MapaTransportistasWrapper";
-import { whereDisponibilidadVigente } from "@/lib/disponibilidad";
+import { fechaISO, viajeConCoords, whereDisponibilidadVigente } from "@/lib/disponibilidad";
+import { distanciaZonaAViajeKm, tieneZonaConfigurada, viajePasaPorZona } from "@/lib/zona";
 import { CONFIANZA_VACIA, findConfianzaTransportistas } from "@/lib/repositories/resena.repository";
 
 export default async function TransportistasMapPage() {
@@ -30,9 +31,24 @@ export default async function TransportistasMapPage() {
       disponibleHoy: true,
       salidaDesde: true,
       salidaDestino: true,
+      salidaDesdeLat: true,
+      salidaDesdeLng: true,
+      salidaDestinoLat: true,
+      salidaDestinoLng: true,
+      fecha: true,
+      espacio: true,
+      espacioDetalle: true,
       actualizadoEn: true,
     },
   });
+
+  const empresa = await db.user.findUnique({
+    where: { id: session.userId },
+    select: { notifZonaLat: true, notifZonaLng: true, notifRadioKm: true },
+  });
+  const zonaEmpresa = empresa && tieneZonaConfigurada(empresa)
+    ? { lat: empresa.notifZonaLat!, lng: empresa.notifZonaLng!, radioKm: empresa.notifRadioKm! }
+    : null;
 
   const favs = await db.favoritoTransportista.findMany({
     where: { empresaId: session.userId },
@@ -44,12 +60,19 @@ export default async function TransportistasMapPage() {
   // muestra: es lo que le permite a la empresa elegir a quién le escribe.
   const confianza = await findConfianzaTransportistas(disponibilidades.map((d) => d.transportistaId));
 
-  const data: TransportistaDisp[] = disponibilidades.map((d: typeof disponibilidades[0]) => ({
+  const data: TransportistaDisp[] = disponibilidades.map((d: typeof disponibilidades[0]) => {
+    const viaje = viajeConCoords(d);
+    const distancia = viaje && empresa ? distanciaZonaAViajeKm(empresa, viaje.origen, viaje.destino) : null;
+    return {
     ...d,
     actualizadoEn: d.actualizadoEn.toISOString(),
+    fecha: fechaISO(d.fecha),
+    distanciaViajeKm: distancia != null ? Math.round(distancia) : null,
+    pasaPorMiZona: !!(viaje && empresa && viajePasaPorZona(empresa, viaje.origen, viaje.destino)),
     esFavorito: favSet.has(d.transportistaId),
     ...(confianza.get(d.transportistaId) ?? CONFIANZA_VACIA),
-  }));
+    };
+  });
 
   return (
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: "#F2F5F5" }}>
@@ -84,7 +107,7 @@ export default async function TransportistasMapPage() {
           </div>
         </div>
       ) : (
-        <MapaTransportistasWrapper initialData={data} />
+        <MapaTransportistasWrapper initialData={data} zonaEmpresa={zonaEmpresa} />
       )}
 
       <BottomTabBar role="empresa" />

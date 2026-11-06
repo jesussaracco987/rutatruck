@@ -1,9 +1,23 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import LocationAutocomplete, { type LocationSelection } from "@/app/(empresa)/empresa/cargas/nueva/_components/LocationAutocomplete";
+import LocationAutocomplete, {
+  buscarLocalidadExacta,
+  type LocationSelection,
+} from "@/app/(empresa)/empresa/cargas/nueva/_components/LocationAutocomplete";
 import { useRouter } from "next/navigation";
 import { radiosConActual } from "@/lib/radios";
+import { hoyArgentina } from "@/lib/chat-carga";
+import {
+  ESPACIOS,
+  ESPACIO_META,
+  FECHA_MAX_DIAS,
+  esEspacio,
+  etiquetaFecha,
+  fechaISO,
+  sumarDias,
+  type Espacio,
+} from "@/lib/disponibilidad";
 
 const VEHICULO_BASE = [
   { value: "utilitario",      label: "Utilitario",      emoji: "🚐", hasVariant: false },
@@ -57,6 +71,24 @@ function parseVehiculoInit(v: string): { base: string; variant: string } {
   return { base: "", variant: "" };
 }
 
+type Cuando = "hoy" | "manana" | "fecha" | "semana";
+
+const CUANDO_OPCIONES: { v: Cuando; label: string }[] = [
+  { v: "hoy", label: "Hoy" },
+  { v: "manana", label: "Mañana" },
+  { v: "fecha", label: "Otro día" },
+  { v: "semana", label: "Esta semana" },
+];
+
+/** Qué opción de "¿Cuándo?" corresponde a lo guardado. */
+function cuandoInicial(fecha: string | null, disponibleHoy: boolean): Cuando {
+  const hoy = hoyArgentina();
+  if (!fecha) return disponibleHoy ? "hoy" : "semana";
+  if (fecha <= hoy) return "hoy";
+  if (fecha === sumarDias(hoy, 1)) return "manana";
+  return "fecha";
+}
+
 type Disponibilidad = {
   id: number;
   vehiculo: string;
@@ -70,13 +102,21 @@ type Disponibilidad = {
   disponibleHoy: boolean;
   salidaDesde: string | null;
   salidaDestino: string | null;
+  salidaDesdeLat: number | null;
+  salidaDesdeLng: number | null;
+  salidaDestinoLat: number | null;
+  salidaDestinoLng: number | null;
+  /** "YYYY-MM-DD" o null. */
+  fecha: string | null;
+  espacio: string | null;
+  espacioDetalle: string | null;
   activo: boolean;
   actualizadoEn: string;
 };
 
 interface Props {
   inicial: Disponibilidad | null;
-  /** Si la disponibilidad inicial ya venció por tiempo (24h/7d) aunque siga "activa". */
+  /** Si la disponibilidad inicial ya venció por tiempo aunque siga "activa". */
   vigenteInicial?: boolean;
 }
 
@@ -90,6 +130,10 @@ const inputStyle: React.CSSProperties = {
   backgroundColor: "#FFFFFF",
   color: "#111827",
 };
+
+function locInicial(label: string | null | undefined, lat: number | null | undefined, lng: number | null | undefined) {
+  return label && lat != null && lng != null ? { label, lat, lng } : null;
+}
 
 export default function DisponibilidadForm({ inicial, vigenteInicial = false }: Props) {
   const router = useRouter();
@@ -107,9 +151,28 @@ export default function DisponibilidadForm({ inicial, vigenteInicial = false }: 
   const [regresoVacio, setRegresoVacio] = useState(inicial?.regresoVacio ?? false);
   const [buscaCarga, setBuscaCarga] = useState(inicial?.buscaCarga ?? false);
   const voyAPuerto = inicial?.voyAPuerto ?? false;
-  const [disponibleHoy, setDisponibleHoy] = useState(inicial?.disponibleHoy ?? false);
+
+  const fechaGuardada = fechaISO(inicial?.fecha);
+  const [cuando, setCuando] = useState<Cuando>(cuandoInicial(fechaGuardada, inicial?.disponibleHoy ?? false));
+  const [fechaElegida, setFechaElegida] = useState(
+    fechaGuardada && fechaGuardada > sumarDias(hoyArgentina(), 1) ? fechaGuardada : sumarDias(hoyArgentina(), 2),
+  );
+
+  const [espacio, setEspacio] = useState<Espacio | null>(
+    esEspacio(inicial?.espacio) ? (inicial!.espacio as Espacio) : null,
+  );
+  const [espacioDetalle, setEspacioDetalle] = useState(inicial?.espacioDetalle ?? "");
+
+  const [conViaje, setConViaje] = useState(!!inicial?.salidaDestino);
   const [salidaDesde, setSalidaDesde] = useState(inicial?.salidaDesde ?? "");
+  const [salidaDesdeLoc, setSalidaDesdeLoc] = useState<LocationSelection | null>(
+    locInicial(inicial?.salidaDesde, inicial?.salidaDesdeLat, inicial?.salidaDesdeLng),
+  );
   const [salidaDestino, setSalidaDestino] = useState(inicial?.salidaDestino ?? "");
+  const [salidaDestinoLoc, setSalidaDestinoLoc] = useState<LocationSelection | null>(
+    locInicial(inicial?.salidaDestino, inicial?.salidaDestinoLat, inicial?.salidaDestinoLng),
+  );
+
   const [error, setError] = useState("");
   const [activo, setActivo] = useState(inicial?.activo ?? false);
   const [vigente, setVigente] = useState(vigenteInicial);
@@ -119,9 +182,36 @@ export default function DisponibilidadForm({ inicial, vigenteInicial = false }: 
     const vehiculo = buildVehiculo(vBase, vVariant);
     if (!loc) { setError("Seleccioná una localidad de la lista."); return; }
     if (!vehiculo) { setError("Seleccioná el tipo de vehículo completo."); return; }
+
+    const hoy = hoyArgentina();
+    const fecha =
+      cuando === "hoy" ? hoy
+      : cuando === "manana" ? sumarDias(hoy, 1)
+      : cuando === "fecha" ? fechaElegida
+      : null;
+    if (cuando === "fecha" && (!fechaElegida || fechaElegida < hoy || fechaElegida > sumarDias(hoy, FECHA_MAX_DIAS))) {
+      setError(`Elegí una fecha entre hoy y los próximos ${FECHA_MAX_DIAS} días.`);
+      return;
+    }
     setError("");
 
     startTransition(async () => {
+      // El viaje necesita coordenadas para dibujarse. Si el texto no se eligió
+      // de la lista (o viene de antes, sin coordenadas) se intenta resolver por
+      // nombre. Sin origen, sale de su zona base.
+      let origen: LocationSelection | null = null;
+      let destino: LocationSelection | null = null;
+      if (conViaje && salidaDestino.trim()) {
+        destino = salidaDestinoLoc ?? (await buscarLocalidadExacta(salidaDestino.trim()));
+        origen = salidaDesde.trim()
+          ? salidaDesdeLoc ?? (await buscarLocalidadExacta(salidaDesde.trim()))
+          : loc;
+        if (!destino || !origen) {
+          setError("Elegí el origen y el destino del viaje de la lista de localidades.");
+          return;
+        }
+      }
+
       const res = await fetch("/api/disponibilidad", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -134,9 +224,16 @@ export default function DisponibilidadForm({ inicial, vigenteInicial = false }: 
           regresoVacio,
           buscaCarga,
           voyAPuerto,
-          disponibleHoy,
-          salidaDesde: salidaDesde.trim() || null,
-          salidaDestino: salidaDestino.trim() || null,
+          disponibleHoy: cuando === "hoy",
+          fecha,
+          espacio,
+          espacioDetalle: espacio && espacio !== "vacio" ? espacioDetalle.trim() || null : null,
+          salidaDesde: origen?.label ?? null,
+          salidaDesdeLat: origen?.lat ?? null,
+          salidaDesdeLng: origen?.lng ?? null,
+          salidaDestino: destino?.label ?? null,
+          salidaDestinoLat: destino?.lat ?? null,
+          salidaDestinoLng: destino?.lng ?? null,
         }),
       });
       if (res.ok) {
@@ -144,7 +241,8 @@ export default function DisponibilidadForm({ inicial, vigenteInicial = false }: 
         setVigente(true);
         router.refresh();
       } else {
-        setError("Error al guardar. Intentá de nuevo.");
+        const data = await res.json().catch(() => ({}));
+        setError(res.status === 400 && data.error ? data.error : "Error al guardar. Intentá de nuevo.");
       }
     });
   }
@@ -168,6 +266,16 @@ export default function DisponibilidadForm({ inicial, vigenteInicial = false }: 
     display: "block",
     marginBottom: "6px",
   };
+
+  const hoy = hoyArgentina();
+  const textoCuando =
+    cuando === "semana"
+      ? "Aparecés en el mapa durante 7 días."
+      : cuando === "fecha"
+        ? fechaElegida
+          ? `Las empresas te ven desde ahora hasta el ${etiquetaFecha(fechaElegida)} a la noche.`
+          : "Elegí el día."
+        : `Aparecés en el mapa hasta ${cuando === "hoy" ? "hoy" : "mañana"} a la noche.`;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -264,6 +372,42 @@ export default function DisponibilidadForm({ inicial, vigenteInicial = false }: 
         )}
       </div>
 
+      {/* Cuándo */}
+      <div>
+        <span style={labelStyle}>¿Cuándo?</span>
+        <div className="grid grid-cols-4 gap-2">
+          {CUANDO_OPCIONES.map((o) => (
+            <button
+              key={o.v}
+              type="button"
+              onClick={() => setCuando(o.v)}
+              className="px-1 py-2.5 rounded-xl border text-xs font-semibold transition-all"
+              style={{
+                backgroundColor: cuando === o.v ? "var(--primary)" : "#FFFFFF",
+                borderColor: cuando === o.v ? "var(--primary)" : "#E2E8E8",
+                color: cuando === o.v ? "#FFFFFF" : "#374151",
+              }}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+        {cuando === "fecha" && (
+          <input
+            type="date"
+            value={fechaElegida}
+            min={hoy}
+            max={sumarDias(hoy, FECHA_MAX_DIAS)}
+            onChange={(e) => setFechaElegida(e.target.value)}
+            className="mt-2"
+            style={inputStyle}
+          />
+        )}
+        <p className="text-xs mt-2" style={{ color: "#6B7280" }}>
+          {textoCuando}
+        </p>
+      </div>
+
       {/* Zona */}
       <div>
         <label style={labelStyle} htmlFor="zona-input">
@@ -312,14 +456,124 @@ export default function DisponibilidadForm({ inicial, vigenteInicial = false }: 
         </div>
       </div>
 
+      {/* Espacio */}
+      <div>
+        <span style={labelStyle}>¿Cuánto lugar te queda? (opcional)</span>
+        <div className="grid grid-cols-3 gap-2">
+          {ESPACIOS.map((e) => {
+            const m = ESPACIO_META[e];
+            const sel = espacio === e;
+            return (
+              <button
+                key={e}
+                type="button"
+                onClick={() => setEspacio(sel ? null : e)}
+                className="flex flex-col items-start gap-0.5 px-3 py-2.5 rounded-xl border text-left transition-all min-w-0"
+                style={{
+                  backgroundColor: sel ? "var(--primary-10)" : "#FFFFFF",
+                  borderColor: sel ? "var(--primary)" : "#E2E8E8",
+                }}
+              >
+                <span className="text-sm font-bold" style={{ color: sel ? "var(--primary)" : "#111827" }}>
+                  {m.label}
+                </span>
+                <span className="text-[11px] leading-tight" style={{ color: "#6B7280" }}>
+                  {m.ayuda}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        {espacio && espacio !== "vacio" && (
+          <input
+            type="text"
+            maxLength={80}
+            placeholder={espacio === "chico" ? "Ej: entra una caja de 1 m³" : "Ej: me quedan 4 pallets"}
+            value={espacioDetalle}
+            onChange={(e) => setEspacioDetalle(e.target.value)}
+            className="mt-2"
+            style={inputStyle}
+          />
+        )}
+      </div>
+
+      {/* Viaje */}
+      <div>
+        <button
+          type="button"
+          onClick={() => setConViaje(!conViaje)}
+          aria-pressed={conViaje}
+          className="w-full flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-left transition-all"
+          style={{
+            backgroundColor: conViaje ? "var(--primary-10)" : "#FFFFFF",
+            borderColor: conViaje ? "var(--primary)" : "#E2E8E8",
+          }}
+        >
+          <span>
+            <span className="block text-sm font-bold" style={{ color: conViaje ? "var(--primary)" : "#111827" }}>
+              🛣️ Hago un viaje
+            </span>
+            <span className="block text-xs" style={{ color: "#6B7280" }}>
+              Las empresas por donde pasás te ven en el mapa
+            </span>
+          </span>
+          <span
+            className="w-10 h-6 rounded-full relative flex-shrink-0 transition-colors"
+            style={{ backgroundColor: conViaje ? "var(--primary)" : "#D1D5DB" }}
+          >
+            <span
+              className="absolute top-0.5 w-5 h-5 rounded-full bg-white transition-all"
+              style={{ left: conViaje ? "18px" : "2px" }}
+            />
+          </span>
+        </button>
+
+        {conViaje && (
+          <div className="mt-3 space-y-3 pl-3 border-l-2" style={{ borderColor: "var(--primary)" }}>
+            <div>
+              <label className="block text-xs font-semibold mb-1" style={{ color: "#374151" }} htmlFor="viaje-desde">
+                Salgo desde
+              </label>
+              <LocationAutocomplete
+                id="viaje-desde"
+                name="salidaDesde"
+                placeholder={loc ? `${loc.label} (tu zona base)` : "Ej: La Plata"}
+                inputClass=""
+                inputStyle={inputStyle}
+                initialValue={salidaDesde}
+                onValueChange={(v) => { setSalidaDesde(v); setSalidaDesdeLoc(null); }}
+                onLocationSelect={(l) => setSalidaDesdeLoc(l)}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold mb-1" style={{ color: "#374151" }} htmlFor="viaje-hacia">
+                Voy hacia
+              </label>
+              <LocationAutocomplete
+                id="viaje-hacia"
+                name="salidaDestino"
+                placeholder="Ej: Rosario, Santa Fe"
+                inputClass=""
+                inputStyle={inputStyle}
+                initialValue={salidaDestino}
+                onValueChange={(v) => { setSalidaDestino(v); setSalidaDestinoLoc(null); }}
+                onLocationSelect={(l) => setSalidaDestinoLoc(l)}
+              />
+            </div>
+            <p className="text-xs" style={{ color: "#6B7280" }}>
+              En el mapa se marca el tramo aproximado (línea recta), no la ruta exacta.
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* Badges opcionales */}
       <div>
-        <span style={labelStyle}>Estado (opcional)</span>
+        <span style={labelStyle}>Además (opcional)</span>
         <div className="flex gap-2 flex-wrap">
           {[
             { key: "regresoVacio", label: "Regreso vacío", state: regresoVacio, set: setRegresoVacio },
             { key: "buscaCarga", label: "Busco carga", state: buscaCarga, set: setBuscaCarga },
-            { key: "disponibleHoy", label: "Disponible hoy", state: disponibleHoy, set: setDisponibleHoy },
           ].map((b) => (
             <button
               key={b.key}
@@ -335,29 +589,6 @@ export default function DisponibilidadForm({ inicial, vigenteInicial = false }: 
               {b.state ? "✓ " : ""}{b.label}
             </button>
           ))}
-        </div>
-      </div>
-
-      {/* Salgo vacío desde */}
-      <div>
-        <span style={labelStyle}>Salgo vacío desde (opcional)</span>
-        <div className="space-y-2">
-          <input
-            type="text"
-            placeholder="🚛 Ej: Rosario"
-            value={salidaDesde}
-            onChange={(e) => setSalidaDesde(e.target.value)}
-            style={inputStyle}
-          />
-          {salidaDesde && (
-            <input
-              type="text"
-              placeholder="📍 Destino (ej: Córdoba)"
-              value={salidaDestino}
-              onChange={(e) => setSalidaDestino(e.target.value)}
-              style={inputStyle}
-            />
-          )}
         </div>
       </div>
 

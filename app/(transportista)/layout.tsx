@@ -12,7 +12,7 @@ async function DisponibleBanner() {
   if (!session) return null;
   const disp = await db.disponibilidadTransportista.findFirst({
     where: { transportistaId: session.userId, activo: true },
-    select: { disponibleHoy: true, actualizadoEn: true },
+    select: { disponibleHoy: true, actualizadoEn: true, fecha: true },
   });
   if (!disp) return null;
 
