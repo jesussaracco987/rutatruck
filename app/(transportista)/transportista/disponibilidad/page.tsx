@@ -4,7 +4,7 @@ import LogoClickCargo from "@/app/_components/LogoClickCargo";
 import { HamburgerMenu } from "@/app/_components/HamburgerMenu";
 import { BottomTabBar } from "@/app/_components/BottomTabBar";
 import DisponibilidadForm from "./_components/DisponibilidadForm";
-import { esDisponibilidadVigente } from "@/lib/disponibilidad";
+import { esDisponibilidadVigente, fechaISO, textoVencimiento } from "@/lib/disponibilidad";
 
 export default async function DisponibilidadPage() {
   const session = await verifySession();
@@ -42,6 +42,7 @@ export default async function DisponibilidadPage() {
                 ? {
                     ...disp,
                     actualizadoEn: disp.actualizadoEn.toISOString(),
+                    fecha: fechaISO(disp.fecha),
                   }
                 : null
             }
@@ -62,7 +63,7 @@ export default async function DisponibilidadPage() {
               minute: "2-digit",
             })}
             {esDisponibilidadVigente(disp) ? (
-              disp.disponibleHoy ? " · Expira en 24 h" : " · Expira en 7 días"
+              ` · ${textoVencimiento(disp)}`
             ) : (
               <span style={{ color: "#B45309", fontWeight: 700 }}> · Venció, ya no aparecés en el mapa</span>
             )}

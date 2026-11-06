@@ -1,11 +1,11 @@
 import { db } from "@/lib/db";
-import { whereDisponibilidadVigente } from "@/lib/disponibilidad";
-import { enAlcance } from "@/lib/zona";
+import { viajeConCoords, whereDisponibilidadVigente } from "@/lib/disponibilidad";
+import { enAlcance, viajePasaPorZona } from "@/lib/zona";
 
 /**
  * Transportistas disponibles que le interesan a una empresa en la campana:
  * vigentes, al alcance de su zona o del radio de trabajo del transportista
- * (misma regla que el push) y sin contarse a sí
+ * (misma regla que el push), o con un viaje anunciado que pasa por su zona, y sin contarse a sí
  * misma — una cuenta EMPRESA_TRANSPORTISTA no tiene que enterarse de su
  * propia disponibilidad. `nueva` = quedó disponible después de la última vez
  * que la empresa marcó la campana como vista.
@@ -33,6 +33,10 @@ export async function findDisponibilidadesParaEmpresa(empresaId: string) {
         lat: true,
         lng: true,
         radioKm: true,
+        salidaDesdeLat: true,
+        salidaDesdeLng: true,
+        salidaDestinoLat: true,
+        salidaDestinoLng: true,
         disponibleDesde: true,
         transportista: { select: { name: true } },
       },
@@ -42,7 +46,11 @@ export async function findDisponibilidadesParaEmpresa(empresaId: string) {
   if (!empresa) return [];
 
   return disponibilidades
-    .filter((d) => enAlcance(empresa, d.lat, d.lng, d.radioKm))
+    .filter((d) => {
+      if (enAlcance(empresa, d.lat, d.lng, d.radioKm)) return true;
+      const viaje = viajeConCoords(d);
+      return viaje != null && viajePasaPorZona(empresa, viaje.origen, viaje.destino);
+    })
     .map((d) => ({ ...d, nueva: d.disponibleDesde > empresa.disponibilidadesVistasEn }));
 }
 

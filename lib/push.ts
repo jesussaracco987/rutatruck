@@ -1,6 +1,6 @@
 import webpush from "web-push";
 import { db } from "./db";
-import { enAlcance, enZona, tieneZonaConfigurada } from "./zona";
+import { enAlcance, enZona, tieneZonaConfigurada, viajePasaPorZona } from "./zona";
 
 webpush.setVapidDetails(
   process.env.VAPID_SUBJECT!,
@@ -114,7 +114,9 @@ export async function sendPushToEmpresasCercanas(
   lat: number,
   lng: number,
   radioKm: number | null,
-  excludeUserId?: string
+  excludeUserId?: string,
+  /** Viaje anunciado: también se avisa a las empresas por cuya zona pasa. */
+  viaje?: { origen: { lat: number; lng: number }; destino: { lat: number; lng: number } } | null,
 ) {
   const subscriptions = await db.pushSubscription.findMany({
     where: {
@@ -128,7 +130,11 @@ export async function sendPushToEmpresasCercanas(
     },
   });
 
-  const filtered = subscriptions.filter((sub) => enAlcance(sub.user, lat, lng, radioKm));
+  const filtered = subscriptions.filter(
+    (sub) =>
+      enAlcance(sub.user, lat, lng, radioKm) ||
+      (viaje != null && viajePasaPorZona(sub.user, viaje.origen, viaje.destino)),
+  );
 
   await enLotes(filtered, (sub) => enviar(sub, payload, "sendPushToEmpresasCercanas"));
 }

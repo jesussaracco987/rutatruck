@@ -27,6 +27,13 @@ export async function GET() {
       disponibleHoy: true,
       salidaDesde: true,
       salidaDestino: true,
+      salidaDesdeLat: true,
+      salidaDesdeLng: true,
+      salidaDestinoLat: true,
+      salidaDestinoLng: true,
+      fecha: true,
+      espacio: true,
+      espacioDetalle: true,
       actualizadoEn: true,
     },
   });

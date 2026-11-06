@@ -8,6 +8,7 @@ import {
 import { notifyEmpresa, notifyTransportista } from "@/lib/sse";
 import { DIAS_EN_CONFIRMACION_ABANDONADA } from "@/lib/plazos";
 import { getVehiculoLabel } from "@/lib/vehiculos";
+import { etiquetaFecha } from "@/lib/disponibilidad";
 import { emailCargaPublicada, emailPrimeraPostulacion } from "./emails";
 
 /**
@@ -170,21 +171,29 @@ onUnaVez("postulacion.vista_empresa", ({ empresaId }) => {
   after(() => notifyEmpresa(empresaId).catch(() => {}));
 });
 
-onUnaVez("disponibilidad.activada", ({ transportistaId, vehiculo, zona, lat, lng, radioKm, disponibleHoy }) => {
+onUnaVez("disponibilidad.activada", (e) => {
+  const { transportistaId, vehiculo, zona, lat, lng, radioKm, disponibleHoy, fecha, salidaDesde, salidaDestino, viaje } = e;
+  const cuando = fecha ? etiquetaFecha(fecha) : null;
+  const title = viaje
+    ? "Transportista viajando por tu zona"
+    : cuando === "Hoy" || (!fecha && disponibleHoy)
+      ? "Transportista disponible hoy"
+      : "Nuevo transportista disponible";
+  const body =
+    viaje && salidaDesde && salidaDestino
+      ? `${getVehiculoLabel(vehiculo)}: ${salidaDesde} → ${salidaDestino}${cuando ? ` · ${cuando}` : ""}`
+      : `${getVehiculoLabel(vehiculo)} en ${zona}${cuando ? ` · ${cuando}` : ""}`;
   // Sin notifyEmpresa() a cada empresa: serían N recálculos por un solo
   // evento. El contador de la campana se pone al día solo en el próximo
   // tick de 10s de cada stream abierto (app/api/events/route.ts).
   after(() =>
     sendPushToEmpresasCercanas(
-      {
-        title: disponibleHoy ? "Transportista disponible hoy" : "Nuevo transportista disponible",
-        body: `${getVehiculoLabel(vehiculo)} en ${zona}`,
-        url: "/empresa/transportistas",
-      },
+      { title, body, url: "/empresa/transportistas" },
       lat,
       lng,
       radioKm,
       transportistaId,
+      viaje,
     ).catch(() => {}),
   );
 });
