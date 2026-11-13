@@ -16,8 +16,8 @@ const SECCIONES: Seccion[] = [
   {
     titulo: "Qué es ClickCargo",
     parrafos: [
-      "ClickCargo es una plataforma que conecta empresas que necesitan transportar cargas con transportistas que buscan viajes. Las empresas publican cargas, los transportistas se postulan y cada empresa elige con quién trabajar.",
-      "ClickCargo no es una empresa de transporte ni un agente de cargas, no presta el servicio de transporte y no es parte del acuerdo entre la empresa y el transportista. Tampoco interviene en el pago del flete, que se acuerda y se paga directamente entre las partes.",
+      "ClickCargo es una plataforma que conecta a personas y empresas que necesitan transportar cargas (en adelante, \"clientes\") con transportistas que buscan viajes. Los clientes publican cargas, los transportistas se postulan y cada cliente elige con quién trabajar.",
+      "ClickCargo no es una empresa de transporte ni un agente de cargas, no presta el servicio de transporte y no es parte del acuerdo entre el cliente y el transportista. Tampoco interviene en el pago del flete, que se acuerda y se paga directamente entre las partes.",
     ],
   },
   {
@@ -31,17 +31,17 @@ const SECCIONES: Seccion[] = [
     items: [
       "Tenés que ser mayor de 18 años y tener capacidad legal para contratar. Si te registrás en nombre de una empresa, declarás que estás autorizado a hacerlo.",
       "Los datos que cargás tienen que ser reales y estar actualizados.",
-      "Sos responsable de cuidar tu contraseña, el acceso a tu correo y todo lo que se haga desde tu cuenta. Las cuentas de empresa también pueden ingresar con un código enviado a su correo.",
+      "Sos responsable de cuidar tu contraseña, el acceso a tu correo y todo lo que se haga desde tu cuenta. Las cuentas de quienes publican cargas también pueden ingresar con un código enviado a su correo.",
       "Si publicás una carga sin tener cuenta, la creamos con el correo y el teléfono que indicás, después de verificar el correo con un código.",
       "Podés eliminar tu cuenta cuando quieras desde la sección de cuenta o escribiéndonos.",
     ],
   },
   {
-    titulo: "Empresas que publican cargas",
+    titulo: "Quienes publican cargas",
     items: [
       "La información de la carga (origen, destino, tipo, peso, fecha y condiciones) tiene que ser verdadera y completa.",
       "Solo se pueden publicar cargas lícitas. Si la carga requiere habilitaciones o permisos especiales, tenés que indicarlo y contar con ellos.",
-      "La empresa es responsable de la carga que entrega, de su documentación y de pagar el flete acordado con el transportista.",
+      "El cliente es responsable de la carga que entrega, de su documentación y de pagar el flete acordado con el transportista.",
     ],
   },
   {
@@ -56,21 +56,21 @@ const SECCIONES: Seccion[] = [
     titulo: "Transportistas",
     items: [
       "El transportista es responsable de contar con licencia, habilitaciones, seguros, documentación del vehículo y todo lo que exija la normativa para el tipo de carga que transporta.",
-      "Al postularte a una carga te comprometés a cumplirla en las condiciones acordadas si la empresa te elige.",
-      "ClickCargo puede mostrar datos, reseñas o indicadores de los usuarios, pero no garantiza la identidad, la solvencia ni la idoneidad de ninguna empresa o transportista.",
+      "Al postularte a una carga te comprometés a cumplirla en las condiciones acordadas si el cliente te elige.",
+      "ClickCargo puede mostrar datos, reseñas o indicadores de los usuarios, pero no garantiza la identidad, la solvencia ni la idoneidad de ningún cliente o transportista.",
     ],
   },
   {
     titulo: "El acuerdo entre las partes",
     parrafos: [
-      "El precio del flete, la forma de pago, los plazos y las demás condiciones del viaje los acuerdan directamente la empresa y el transportista. ClickCargo no responde por incumplimientos, demoras, daños, pérdidas, robos, accidentes ni por la falta de pago entre las partes.",
+      "El precio del flete, la forma de pago, los plazos y las demás condiciones del viaje los acuerdan directamente el cliente y el transportista. ClickCargo no responde por incumplimientos, demoras, daños, pérdidas, robos, accidentes ni por la falta de pago entre las partes.",
       "Recomendamos dejar por escrito las condiciones acordadas y verificar la documentación de la otra parte antes de cada viaje.",
     ],
   },
   {
     titulo: "Costos del servicio",
     items: [
-      "Publicar una carga y concretar una postulación pueden tener un costo. El transportista paga una comisión por cada camión que cubre cuando la empresa acepta su postulación.",
+      "Publicar una carga y concretar una postulación pueden tener un costo. El transportista paga una comisión por cada camión que cubre cuando el cliente acepta su postulación.",
       "El importe se informa siempre antes de pagar. Los pagos se procesan a través de Mercado Pago.",
       "Durante las promociones de lanzamiento, el uso puede ser gratuito por el tiempo que se indique en la plataforma.",
       "Los importes pagados a ClickCargo no se reembolsan, salvo error atribuible a la plataforma o cuando la ley lo exija.",
@@ -86,13 +86,13 @@ const SECCIONES: Seccion[] = [
   {
     titulo: "Reseñas",
     parrafos: [
-      "Después de cada viaje, empresa y transportista pueden calificarse. Las reseñas tienen que reflejar una experiencia real. ClickCargo puede ocultar o eliminar reseñas falsas, ofensivas o que no correspondan a un viaje concretado.",
+      "Después de cada viaje, cliente y transportista pueden calificarse. Las reseñas tienen que reflejar una experiencia real. ClickCargo puede ocultar o eliminar reseñas falsas, ofensivas o que no correspondan a un viaje concretado.",
     ],
   },
   {
     titulo: "Mensajes",
     parrafos: [
-      "El chat entre empresas y transportistas es para coordinar las cargas. Los mensajes se conservan por un tiempo limitado después de finalizado el viaje y pueden ser revisados ante una disputa o una denuncia.",
+      "El chat entre clientes y transportistas es para coordinar las cargas. Los mensajes se conservan por un tiempo limitado después de finalizado el viaje y pueden ser revisados ante una disputa o una denuncia.",
     ],
   },
   {

@@ -29,8 +29,34 @@ export async function POST(req: NextRequest) {
 
   const hashed = await bcrypt.hash(password, 10);
 
+  // El link es por usuario (cuentas sin email, links mandados por WhatsApp) o
+  // por email (recuperar contraseña).
+  const where = resetToken.userId
+    ? { id: resetToken.userId }
+    : resetToken.email
+      ? { email: resetToken.email }
+      : null;
+  const user = where
+    ? await db.user.findUnique({ where, select: { id: true, terminosAceptadosEn: true } })
+    : null;
+  if (!user) {
+    await db.passwordResetToken.delete({ where: { token } });
+    return NextResponse.json({ error: "El enlace no es válido o ya fue utilizado" }, { status: 400 });
+  }
+
+  // Un link que llegó por email verifica ese email. Para las cuentas del alta
+  // asistida o de WhatsApp (ver solicitud-transportista.service) además es la
+  // activación: la pantalla avisa que al activar se aceptan los términos, y se
+  // registra acá porque nunca pasaron por el formulario de registro.
   await db.$transaction([
-    db.user.update({ where: { email: resetToken.email }, data: { password: hashed } }),
+    db.user.update({
+      where: { id: user.id },
+      data: {
+        password: hashed,
+        ...(resetToken.email ? { emailVerified: true } : {}),
+        ...(!user.terminosAceptadosEn ? { terminosAceptadosEn: new Date() } : {}),
+      },
+    }),
     db.passwordResetToken.delete({ where: { token } }),
   ]);
 

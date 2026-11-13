@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createHmac } from "crypto";
+import { createHmac, timingSafeEqual } from "crypto";
 import { procesarPago } from "@/lib/services/pago.service";
 
 function verificarFirma(req: NextRequest, paymentId: string): boolean {
+  // Sin secreto no hay forma de validar la notificación: se rechaza en vez de
+  // aceptarla a ciegas. El pago igual se confirma por el redirect de success,
+  // que lo verifica contra Mercado Pago.
   const secret = process.env.MP_WEBHOOK_SECRET;
-  if (!secret) return true;
+  if (!secret) {
+    console.error("[webhook/mp] Falta MP_WEBHOOK_SECRET; notificación rechazada.");
+    return false;
+  }
 
   const xSignature = req.headers.get("x-signature");
   const xRequestId = req.headers.get("x-request-id");
@@ -20,7 +26,9 @@ function verificarFirma(req: NextRequest, paymentId: string): boolean {
   const signedData = `id:${paymentId};request-id:${xRequestId};ts:${ts}`;
   const expected = createHmac("sha256", secret).update(signedData).digest("hex");
 
-  return expected === v1;
+  const a = Buffer.from(expected, "hex");
+  const b = Buffer.from(v1, "hex");
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 export async function POST(req: NextRequest) {

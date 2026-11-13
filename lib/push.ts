@@ -83,13 +83,16 @@ export async function sendPushToTransportistasCercanos(
   payload: PushPayload,
   origenLat: number | null,
   origenLng: number | null,
-  excludeUserId?: string
+  excludeUserId?: string,
+  /** Ya avisados por otro canal (p. ej. "te queda de paso"): no duplicar el push. */
+  yaAvisados: string[] = [],
 ) {
+  const excluidos = [...(excludeUserId ? [excludeUserId] : []), ...yaAvisados];
   const subscriptions = await db.pushSubscription.findMany({
     where: {
       user: {
         role: { in: [...ROLES_TRANSPORTISTA] },
-        ...(excludeUserId ? { id: { not: excludeUserId } } : {}),
+        ...(excluidos.length ? { id: { notIn: excluidos } } : {}),
       },
     },
     include: {
@@ -100,6 +103,13 @@ export async function sendPushToTransportistasCercanos(
   const filtered = subscriptions.filter((sub) => enZona(sub.user, origenLat, origenLng));
 
   await enLotes(filtered, (sub) => enviar(sub, payload, "sendPushToTransportistasCercanos"));
+}
+
+/** Push a una lista puntual de usuarios (todas sus suscripciones). */
+export async function sendPushToUsers(userIds: string[], payload: PushPayload) {
+  if (userIds.length === 0) return;
+  const subscriptions = await db.pushSubscription.findMany({ where: { userId: { in: userIds } } });
+  await enLotes(subscriptions, (sub) => enviar(sub, payload, "sendPushToUsers"));
 }
 
 /**

@@ -4,7 +4,10 @@ import {
   sendPushToEmpresasCercanas,
   sendPushToTransportistasCercanos,
   sendPushToUser,
+  sendPushToUsers,
 } from "@/lib/push";
+import { db } from "@/lib/db";
+import { findTransportistasConViajeDePaso } from "@/lib/repositories/disponibilidad.repository";
 import { notifyEmpresa, notifyTransportista } from "@/lib/sse";
 import { DIAS_EN_CONFIRMACION_ABANDONADA } from "@/lib/plazos";
 import { getVehiculoLabel } from "@/lib/vehiculos";
@@ -20,6 +23,7 @@ import { emailCargaPublicada, emailPrimeraPostulacion } from "./emails";
  */
 
 function notificarCargaDisponibleCercana({
+  cargaId,
   titulo,
   origen,
   destino,
@@ -27,6 +31,7 @@ function notificarCargaDisponibleCercana({
   origenLng,
   empresaId,
 }: {
+  cargaId: number;
   titulo: string;
   origen: string;
   destino: string;
@@ -37,18 +42,33 @@ function notificarCargaDisponibleCercana({
   // El título de una carga publicada ya es "origen → destino": repetirlo
   // duplicaba la ruta en el aviso. Solo se antepone si dice otra cosa.
   const ruta = `${origen} → ${destino}`;
-  after(() =>
-    sendPushToTransportistasCercanos(
-      {
-        title: "Nueva carga disponible",
-        body: titulo && titulo !== ruta ? `${titulo} · ${ruta}` : ruta,
-        url: "/transportista/cargas",
-      },
+  const body = titulo && titulo !== ruta ? `${titulo} · ${ruta}` : ruta;
+  after(async () => {
+    // Primero los que ya hacen ese viaje (comisionistas, vuelta vacía): reciben
+    // un aviso más específico que "carga cerca" y quedan fuera del aviso por zona.
+    let depaso: string[] = [];
+    try {
+      const carga = await db.carga.findUnique({
+        where: { id: cargaId },
+        select: { origenLat: true, origenLng: true, destinoLat: true, destinoLng: true, fechaCarga: true, empresaId: true },
+      });
+      if (carga) depaso = await findTransportistasConViajeDePaso(carga);
+      await sendPushToUsers(depaso, {
+        title: "Te queda de paso",
+        body: `${body} · coincide con el viaje que anunciaste`,
+        url: `/transportista/cargas/${cargaId}`,
+      });
+    } catch (err) {
+      console.error("[listener] aviso de carga de paso falló:", err);
+    }
+    await sendPushToTransportistasCercanos(
+      { title: "Nueva carga disponible", body, url: "/transportista/cargas" },
       origenLat,
       origenLng,
       empresaId,
-    ).catch(() => {}),
-  );
+      depaso,
+    ).catch(() => {});
+  });
 }
 
 function alPublicarCarga(carga: Parameters<typeof notificarCargaDisponibleCercana>[0] & { cargaId: number }) {

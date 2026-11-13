@@ -1,10 +1,14 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { pagoMockActivo } from "@/lib/mercadopago";
 
 export default async function PagoMockPage({
   searchParams,
 }: {
   searchParams: Promise<{ ref?: string }>;
 }) {
+  if (!pagoMockActivo()) notFound();
+
   const { ref: refParam } = await searchParams;
   const ref = refParam ?? "";
   const cargaId = ref.replace("publicar_", "");
@@ -28,7 +32,7 @@ export default async function PagoMockPage({
 
         <div className="flex flex-col gap-3 pt-2">
           <a
-            href={`/api/pagos/success?external_reference=publicar_${cargaId}&payment_id=mock-123&status=approved`}
+            href={`/api/pagos/success?external_reference=publicar_${cargaId}&payment_id=publicar_${cargaId}&status=approved`}
             className="bg-green-600 hover:bg-green-700 text-gray-900 font-medium rounded-lg px-6 py-2.5 transition-colors"
           >
             ✅ Simular pago aprobado

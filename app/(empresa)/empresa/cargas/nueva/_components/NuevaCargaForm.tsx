@@ -443,7 +443,7 @@ export default function NuevaCargaForm({
               {fields.tipoCarga !== "paqueteria" && (
                 <div>
                   <label htmlFor="cantidadCamiones" className={labelClass} style={labelStyle}>
-                    ¿Cuántos camiones necesitás? *
+                    ¿Cuántos vehículos necesitás? *
                   </label>
                   <input
                     id="cantidadCamiones"

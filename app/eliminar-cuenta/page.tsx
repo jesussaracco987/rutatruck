@@ -46,7 +46,7 @@ export default function EliminarCuentaPage() {
           </h2>
           <ul className="list-disc pl-6 space-y-1" style={{ color: "var(--text-secondary)" }}>
             <li>Nombre, correo electrónico y contraseña.</li>
-            <li>Datos de empresa o transportista (CUIT, razón social, vehículo, etc.).</li>
+            <li>Datos de tu perfil y de transportista (CUIT, razón social, vehículo, etc.).</li>
             <li>Historial de cargas, postulaciones y disponibilidad.</li>
             <li>Mensajes del chat interno.</li>
             <li>Notificaciones y preferencias de la cuenta.</li>

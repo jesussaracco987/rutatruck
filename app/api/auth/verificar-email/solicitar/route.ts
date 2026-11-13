@@ -13,6 +13,8 @@ export async function POST() {
   const user = await db.user.findUnique({ where: { id: session.userId } });
   if (!user) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   if (user.emailVerified) return NextResponse.json({ ok: true, alreadyVerified: true });
+  if (!user.email) return NextResponse.json({ error: "Tu cuenta no tiene email" }, { status: 400 });
+  const email = user.email;
 
   await db.emailVerificationCode.deleteMany({ where: { userId: user.id } });
 
@@ -24,7 +26,7 @@ export async function POST() {
   });
 
   const emailResult = await sendEmail({
-    to: user.email,
+    to: email,
     subject: "Verificá tu email — ClickCargo",
     html: `
       <!DOCTYPE html>

@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { verifySession } from "@/lib/dal";
+import { db } from "@/lib/db";
+import { puedeChatear } from "@/lib/match";
 
 const PASOS = [
   "El cliente revisará tu solicitud",
@@ -6,7 +9,26 @@ const PASOS = [
   "Podrás ver el contacto para coordinar",
 ];
 
-export default function ExitoPostulacionPage() {
+const PASOS_CHAT_PREVIO = [
+  "Ya podés escribirle al cliente por el chat",
+  "Si te selecciona, te confirma el viaje",
+  "Con el viaje confirmado ves su contacto",
+];
+
+export default async function ExitoPostulacionPage({ params }: { params: Promise<{ id: string }> }) {
+  const session = await verifySession();
+  const cargaId = parseInt((await params).id);
+  const postulacion = isNaN(cargaId)
+    ? null
+    : await db.postulacion.findUnique({
+        where: { cargaId_transportistaId: { cargaId, transportistaId: session.userId } },
+        select: { id: true, estado: true, matchConfirmadoEn: true, carga: { select: { estado: true } } },
+      });
+  // Con el chat previo (ver lib/match.ts) lo más útil después de postularse es
+  // presentarse por el chat: el cliente elige más rápido a quien le habló.
+  const chatId = postulacion && puedeChatear(postulacion) ? postulacion.id : null;
+  const pasos = chatId ? PASOS_CHAT_PREVIO : PASOS;
+
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-between px-6 py-16"
@@ -41,7 +63,7 @@ export default function ExitoPostulacionPage() {
             Próximos pasos
           </p>
           <div className="space-y-4">
-            {PASOS.map((paso, i) => (
+            {pasos.map((paso, i) => (
               <div key={i} className="flex items-start gap-4">
                 <span
                   className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-sm font-black"
@@ -59,7 +81,16 @@ export default function ExitoPostulacionPage() {
       </div>
 
       {/* CTA */}
-      <div className="w-full max-w-sm mt-10">
+      <div className="w-full max-w-sm mt-10 flex flex-col gap-3">
+        {chatId && (
+          <Link
+            href={`/transportista/conversaciones/${chatId}`}
+            className="block w-full py-4 rounded-2xl text-center font-black text-base tracking-wide transition-opacity active:opacity-80"
+            style={{ backgroundColor: "rgba(255,255,255,0.97)", color: "var(--primary)" }}
+          >
+            ESCRIBIRLE AL CLIENTE
+          </Link>
+        )}
         <Link
           href="/transportista/postulaciones"
           className="block w-full py-4 rounded-2xl text-center font-black text-base tracking-wide transition-opacity active:opacity-80"

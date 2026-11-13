@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { createSession, deleteSession, type Role } from "@/lib/session";
 import { crearCuenta } from "@/lib/services/cuenta.service";
 import { isEmpresa, isTransportista } from "@/lib/roles";
+import { normalizarTelefono, pareceTelefono } from "@/lib/telefono";
 
 export type FormState = { error?: string } | undefined;
 
@@ -73,14 +74,19 @@ export async function login(
   _state: FormState,
   formData: FormData
 ): Promise<FormState> {
-  const email = (formData.get("email") as string)?.trim().toLowerCase();
+  // El campo acepta email o teléfono: las cuentas creadas por WhatsApp o por
+  // el alta asistida pueden no tener email (ver telefonoLogin).
+  const identificador = (formData.get("email") as string)?.trim().toLowerCase();
   const password = formData.get("password") as string;
 
-  if (!email || !password) {
-    return { error: "Email y contraseña requeridos" };
+  if (!identificador || !password) {
+    return { error: "Email o teléfono y contraseña requeridos" };
   }
 
-  const user = await db.user.findUnique({ where: { email } });
+  const telefono = pareceTelefono(identificador) ? normalizarTelefono(identificador) : null;
+  const user = telefono
+    ? await db.user.findUnique({ where: { telefonoLogin: telefono } })
+    : await db.user.findUnique({ where: { email: identificador } });
   if (!user) return { error: "Credenciales inválidas" };
 
   const valid = await bcrypt.compare(password, user.password);

@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   }
   if (!isEmpresa(session.role)) {
     return NextResponse.json(
-      { error: "Solo empresas pueden publicar cargas" },
+      { error: "Tu cuenta no está habilitada para publicar cargas" },
       { status: 403 },
     );
   }

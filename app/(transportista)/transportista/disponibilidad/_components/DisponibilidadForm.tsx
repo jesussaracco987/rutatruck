@@ -273,7 +273,7 @@ export default function DisponibilidadForm({ inicial, vigenteInicial = false }: 
       ? "Aparecés en el mapa durante 7 días."
       : cuando === "fecha"
         ? fechaElegida
-          ? `Las empresas te ven desde ahora hasta el ${etiquetaFecha(fechaElegida)} a la noche.`
+          ? `Quienes tienen cargas te ven desde ahora hasta el ${etiquetaFecha(fechaElegida)} a la noche.`
           : "Elegí el día."
         : `Aparecés en el mapa hasta ${cuando === "hoy" ? "hoy" : "mañana"} a la noche.`;
 
@@ -514,7 +514,7 @@ export default function DisponibilidadForm({ inicial, vigenteInicial = false }: 
               🛣️ Hago un viaje
             </span>
             <span className="block text-xs" style={{ color: "#6B7280" }}>
-              Las empresas por donde pasás te ven en el mapa
+              Quienes tienen cargas por donde pasás te ven en el mapa
             </span>
           </span>
           <span

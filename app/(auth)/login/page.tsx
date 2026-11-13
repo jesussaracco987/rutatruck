@@ -55,17 +55,19 @@ export default function LoginPage({
               className="block text-xs font-semibold uppercase tracking-wider mb-2"
               style={{ color: "#9CA3AF" }}
             >
-              Email
+              Email o teléfono
             </label>
             <input
               id="email"
               name="email"
-              type="email"
+              type="text"
+              inputMode="email"
               required
-              autoComplete="email"
+              autoComplete="username"
+              autoCapitalize="none"
               className={inputClass}
               style={{ ...inputStyle, ...focusRing }}
-              placeholder="tu@email.com"
+              placeholder="tu@email.com o 351 555-1234"
             />
           </div>
 

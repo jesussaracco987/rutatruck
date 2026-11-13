@@ -1,9 +1,9 @@
 import { db } from "@/lib/db";
 import { esChatVigente, whereChatVigente, labelChatPorVencer, CHAT_RETENCION_FINALIZADA_MS } from "@/lib/chat";
-import { esMatchConfirmado, whereMatchConfirmado } from "@/lib/match";
+import { puedeChatear, wherePuedeChatear } from "@/lib/match";
 
-// El chat se abre recién con el match confirmado (ver lib/match.ts): antes, las
-// partes podrían pasarse el contacto y cerrar el viaje por fuera de la app.
+// El chat se abre con el match confirmado o, mientras no se cobra comisión,
+// desde la postulación (consulta previa). La regla vive en lib/match.ts.
 
 export async function crearMensaje(postulacionId: number, autorId: string, cuerpo: string) {
   return db.mensaje.create({ data: { postulacionId, autorId, cuerpo } });
@@ -44,10 +44,12 @@ export async function countMensajesNoLeidos(userId: string, role: "empresa" | "t
     where: {
       autorId: { not: userId },
       leidoEn: null,
-      postulacion:
-        role === "empresa"
-          ? { estado: "ACEPTADA", carga: { empresaId: userId } }
-          : { estado: "ACEPTADA", transportistaId: userId },
+      postulacion: {
+        AND: [
+          wherePuedeChatear(),
+          role === "empresa" ? { carga: { empresaId: userId } } : { transportistaId: userId },
+        ],
+      },
     },
   });
 }
@@ -56,7 +58,9 @@ export async function countMensajesNoLeidos(userId: string, role: "empresa" | "t
  * El hilo, con los datos de la contraparte, solo si `userId` es una de las dos
  * partes: el transportista de la postulación o la empresa dueña de la carga.
  *
- * Exige `estado: ACEPTADA` para ambos lados. Antes la empresa entraba con solo
+ * Exige que el hilo esté habilitado para ambos lados (ver puedeChatear): con
+ * match confirmado, o como consulta previa sobre una carga ACTIVA. Antes la
+ * empresa entraba con solo
  * ser dueña de la carga, así que al cancelarse —lo que manda todas las
  * postulaciones a RECHAZADA— el transportista quedaba afuera pero la empresa
  * seguía pudiendo escribir mensajes que ya no le llegaban a nadie.
@@ -85,9 +89,8 @@ export async function findPostulacionParaChat(postulacionId: number, userId: str
     },
   });
   if (!postulacion) return null;
-  if (postulacion.estado !== "ACEPTADA") return null;
   if (postulacion.transportistaId !== userId && postulacion.carga.empresaId !== userId) return null;
-  if (!esMatchConfirmado(postulacion)) return null;
+  if (!puedeChatear(postulacion)) return null;
   if (!esChatVigente(postulacion.carga)) return null;
   return postulacion;
 }
@@ -121,6 +124,8 @@ export type ConversacionResumen = {
   ultimoMensajeEn: Date;
   noLeidos: number;
   avisoVencimiento: string | null;
+  /** Hilo abierto desde la postulación, antes de que lo elijan (ver lib/match.ts). */
+  consultaPrevia: boolean;
 };
 
 /**
@@ -134,14 +139,16 @@ export async function findConversaciones(
 ): Promise<ConversacionResumen[]> {
   const postulaciones = await db.postulacion.findMany({
     where: {
-      estado: "ACEPTADA",
-      ...whereMatchConfirmado(),
-      ...(role === "empresa"
-        ? { carga: { empresaId: userId, ...whereChatVigente() } }
-        : { transportistaId: userId, carga: whereChatVigente() }),
+      AND: [
+        wherePuedeChatear(),
+        role === "empresa"
+          ? { carga: { empresaId: userId, ...whereChatVigente() } }
+          : { transportistaId: userId, carga: whereChatVigente() },
+      ],
     },
     select: {
       id: true,
+      estado: true,
       transportista: { select: { name: true } },
       carga: {
         select: {
@@ -208,8 +215,13 @@ export async function findConversaciones(
         ultimoMensajeEn: ultimo?.creadoEn ?? p.carga.updatedAt,
         noLeidos: noLeidosPorHilo.get(p.id) ?? 0,
         avisoVencimiento: labelChatPorVencer(p.carga),
+        consultaPrevia: p.estado === "PENDIENTE",
       };
     })
+    // Cada postulación pendiente es un hilo posible: sin este filtro la lista
+    // de la empresa se llenaba de "Sin mensajes todavía" por cada postulante.
+    // Las consultas aparecen recién cuando alguien escribió.
+    .filter((c) => !c.consultaPrevia || c.ultimoMensaje !== null)
     .sort((a, b) => b.ultimoMensajeEn.getTime() - a.ultimoMensajeEn.getTime());
 }
 
@@ -228,9 +240,7 @@ export async function esParteDelHilo(postulacionId: number, userId: string) {
   const encontrada = await db.postulacion.findFirst({
     where: {
       id: postulacionId,
-      estado: "ACEPTADA",
-      ...whereMatchConfirmado(),
-      carga: whereChatVigente(),
+      AND: [wherePuedeChatear(), { carga: whereChatVigente() }],
       OR: [{ transportistaId: userId }, { carga: { empresaId: userId } }],
     },
     select: { id: true },

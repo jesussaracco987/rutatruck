@@ -603,14 +603,14 @@ export default function ChatPublicar({
             placeholder="Email"
           />
           <input
-            aria-label="Nombre o empresa (opcional)"
+            aria-label="Tu nombre (opcional)"
             type="text"
             autoComplete="name"
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             className={inputClass}
             style={inputStyle}
-            placeholder="Nombre o empresa (opcional)"
+            placeholder="Tu nombre (opcional)"
           />
           {/* Links en pestaña nueva: navegar en la misma perdería lo ya cargado. */}
           <label className="flex items-start gap-2.5 text-sm text-gray-600">

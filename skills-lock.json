@@ -109,6 +109,12 @@
       "skillPath": "skills/remotion-to-hyperframes/SKILL.md",
       "computedHash": "f9e78f4ee8327f8005d42f17a32f6c3ab0f1b26c06dce5c0cf416759071889f1"
     },
+    "security-audit": {
+      "source": "cloudflare/security-audit-skill",
+      "sourceType": "github",
+      "skillPath": "skills/security-audit/SKILL.md",
+      "computedHash": "e6b2e317de75da97e9de18d842982994803f3a67a4a6d8154a82323dc3de8528"
+    },
     "slideshow": {
       "source": "heygen-com/hyperframes",
       "sourceType": "github",

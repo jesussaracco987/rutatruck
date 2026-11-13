@@ -32,7 +32,7 @@ export default function PoliticaDePrivacidadPage() {
             sin tener cuenta, la creamos con tu correo y teléfono después de verificar tu correo con
             un código; la contraseña la podés elegir más tarde.
           </li>
-          <li>Datos de empresa o transportista (CUIT, razón social, tipo de vehículo, etc.).</li>
+          <li>Datos de tu perfil y de transportista (CUIT, razón social, tipo de vehículo, etc.).</li>
           <li>Ubicación geográfica en tiempo real (solo para transportistas, con tu consentimiento).</li>
           <li>Información sobre cargas publicadas y postulaciones realizadas.</li>
           <li>Datos de uso de la aplicación (páginas visitadas, acciones realizadas).</li>
@@ -59,9 +59,9 @@ export default function PoliticaDePrivacidadPage() {
           2. Cómo usamos tu información
         </h2>
         <ul className="list-disc pl-6 space-y-1" style={{ color: "var(--text-secondary)" }}>
-          <li>Conectar empresas con transportistas disponibles.</li>
+          <li>Conectar a quienes necesitan enviar cargas con transportistas disponibles.</li>
           <li>Interpretar con inteligencia artificial el pedido que escribís o grabás en el chat y armar la carga.</li>
-          <li>Mostrar ubicación de transportistas en el mapa a empresas autorizadas.</li>
+          <li>Mostrar ubicación de transportistas en el mapa a usuarios que publican cargas.</li>
           <li>Enviar notificaciones push sobre cargas, postulaciones y actualizaciones.</li>
           <li>Mejorar la plataforma y solucionar problemas técnicos.</li>
           <li>Cumplir con obligaciones legales aplicables.</li>
@@ -111,7 +111,7 @@ export default function PoliticaDePrivacidadPage() {
         </h2>
         <p className="mb-2" style={{ color: "var(--text-secondary)" }}>
           Solicitamos acceso a tu ubicación únicamente si sos transportista y tenés disponibilidad
-          activa. Esta información se usa para mostrar tu posición a empresas que buscan
+          activa. Esta información se usa para mostrar tu posición a quienes buscan
           transportistas cercanos. Podés desactivar el seguimiento en cualquier momento desde la
           sección de disponibilidad. Al publicar una carga también podés usar tu ubicación para
           marcar el punto en el mapa; en ese caso se usa solo para ese punto.

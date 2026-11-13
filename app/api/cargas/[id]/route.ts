@@ -10,7 +10,7 @@ export async function PUT(
 ) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  if (!isEmpresa(session.role)) return NextResponse.json({ error: "Solo empresas" }, { status: 403 });
+  if (!isEmpresa(session.role)) return NextResponse.json({ error: "Solo quien publica la carga puede hacer esto" }, { status: 403 });
 
   const { id } = await params;
   const cargaId = parseInt(id);

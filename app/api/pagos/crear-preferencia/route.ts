@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   }
   if (session.role !== "EMPRESA") {
     return NextResponse.json(
-      { error: "Solo empresas pueden realizar pagos" },
+      { error: "Tu cuenta no está habilitada para este pago" },
       { status: 403 },
     );
   }
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
     back_urls: {
       success: `${origin}/api/pagos/success`,
       failure: `${origin}/api/pagos/failure`,
-      pending: `${origin}/api/pagos/failure`,
+      pending: `${origin}/api/pagos/success`,
     },
     auto_return: "approved",
     statement_descriptor: "ClickCargo",

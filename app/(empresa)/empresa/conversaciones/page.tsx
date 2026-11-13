@@ -59,6 +59,14 @@ export default async function EmpresaConversacionesPage() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="font-semibold text-gray-900 truncate">{c.contraparteNombre}</p>
+                      {c.consultaPrevia && (
+                        <span
+                          className="flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full"
+                          style={{ backgroundColor: "#E0F2FE", color: "#0369A1" }}
+                        >
+                          Consulta
+                        </span>
+                      )}
                       {c.noLeidos > 0 && (
                         <span
                           className="flex-shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white"

@@ -12,9 +12,11 @@ interface Props {
   esFlota?: boolean;
   pesoUnidad?: string | null;
   emailVerified?: boolean;
+  /** Mientras no hay comisión, postularse abre el chat con el cliente (ver lib/match.ts). */
+  chatPrevio?: boolean;
 }
 
-export default function PostularseButton({ cargaId, miPostulacion, contactoDefecto, cantidadCamiones = 1, esFlota = false, pesoUnidad, emailVerified = true }: Props) {
+export default function PostularseButton({ cargaId, miPostulacion, contactoDefecto, cantidadCamiones = 1, esFlota = false, pesoUnidad, emailVerified = true, chatPrevio = false }: Props) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +34,9 @@ export default function PostularseButton({ cargaId, miPostulacion, contactoDefec
       RECHAZADA: { backgroundColor: "#FFFFFF0A", borderColor: "#E2E8E8", color: "#6B7280" },
     };
     const labelMap: Record<string, string> = {
-      PENDIENTE: "Tu postulación está pendiente. El cliente te contactará si te selecciona.",
+      PENDIENTE: chatPrevio
+        ? "Tu postulación está pendiente. Mientras el cliente decide, podés escribirle por el chat."
+        : "Tu postulación está pendiente. El cliente te contactará si te selecciona.",
       ACEPTADA: "¡Fuiste seleccionado para esta carga! El cliente se pondrá en contacto.",
       RECHAZADA: "El cliente seleccionó otro transportista para esta carga.",
     };
@@ -82,7 +86,7 @@ export default function PostularseButton({ cargaId, miPostulacion, contactoDefec
         body: JSON.stringify({
           cargaId,
           mensaje: mensaje || undefined,
-          contactoEmail,
+          contactoEmail: contactoEmail.trim() || null,
           contactoTelefono,
           camionesCubiertos: esFlota ? Math.max(1, parseInt(camionesCubiertos) || 1) : 1,
           precioOfrecido: precioOfrecido ? parseFloat(precioOfrecido) : undefined,
@@ -120,13 +124,18 @@ export default function PostularseButton({ cargaId, miPostulacion, contactoDefec
       className="rounded-xl border p-6"
       style={{ backgroundColor: "#FFFFFF", borderColor: "#E2E8E8" }}
     >
-      <h2 className="font-medium text-gray-900 mb-4">Postularme a esta carga</h2>
+      <h2 className="font-medium text-gray-900 mb-1">Postularme a esta carga</h2>
+      <p className="text-sm mb-4" style={{ color: "#6B7280" }}>
+        {chatPrevio
+          ? "Al postularte se abre un chat con el cliente para consultar lo que necesites."
+          : "Si el cliente te elige, se habilitan el chat y sus datos de contacto."}
+      </p>
 
       <div className="space-y-4 mb-4">
         {esFlota && cantidadCamiones > 1 && (
           <div>
             <label className={labelClass} style={labelStyle}>
-              ¿Cuántos camiones podés cubrir? *{" "}
+              ¿Cuántos vehículos podés cubrir? *{" "}
               <span className="text-xs" style={{ color: "#6B7280" }}>(máx. {cantidadCamiones})</span>
             </label>
             <input
@@ -143,11 +152,12 @@ export default function PostularseButton({ cargaId, miPostulacion, contactoDefec
         )}
         <div>
           <label className={labelClass} style={labelStyle}>
-            Email de contacto *
+            {/* Quien entra con el teléfono puede no tener email: ahí es opcional. */}
+            Email de contacto {contactoDefecto.email ? "*" : <span className="text-xs" style={{ color: "#6B7280" }}>(opcional)</span>}
           </label>
           <input
             type="email"
-            required
+            required={!!contactoDefecto.email}
             value={contactoEmail}
             onChange={(e) => setContactoEmail(e.target.value)}
             className={inputClass}
