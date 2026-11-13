@@ -58,6 +58,28 @@ export async function procesarPago(paymentId: string) {
   }
 }
 
+/**
+ * Los redirects de Mercado Pago (back_urls) llegan por GET y sus parámetros los
+ * puede escribir cualquiera: no prueban nada. Antes de confirmar se consulta el
+ * pago al proveedor con el access token del servidor y solo cuenta si está
+ * aprobado y es de esta misma external_reference. Devuelve el id del pago según
+ * Mercado Pago, o null si no se pudo verificar.
+ */
+export async function verificarPagoAprobado(
+  paymentId: string,
+  externalReference: string,
+): Promise<string | null> {
+  try {
+    const pago = await obtenerPago(paymentId);
+    if (pago.status !== "approved") return null;
+    if (pago.external_reference !== externalReference) return null;
+    return String(pago.id);
+  } catch (err) {
+    console.error("[pago.service] No se pudo verificar el pago:", err);
+    return null;
+  }
+}
+
 export async function confirmarPagoPublicacion(
   cargaId: number,
   paymentId: string | null,

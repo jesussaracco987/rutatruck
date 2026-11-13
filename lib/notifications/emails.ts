@@ -16,7 +16,7 @@ function escapeHtml(texto: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function plantilla({
+export function plantilla({
   titulo,
   parrafos,
   boton,
@@ -73,15 +73,17 @@ export async function emailCargaPublicada(cargaId: number) {
     where: { id: cargaId },
     select: { titulo: true, empresa: { select: { email: true } } },
   });
-  if (!carga) return;
+  // Cuenta sin email (entra con el teléfono): el aviso le llega por la app.
+  if (!carga?.empresa.email) return;
+  const destinatario = carga.empresa.email;
 
   const titulo = escapeHtml(carga.titulo);
-  const email = escapeHtml(carga.empresa.email);
+  const email = escapeHtml(destinatario);
   const link = absoluteUrl(`/empresa/cargas/${cargaId}`);
   const recuperar = absoluteUrl("/recuperar-contrasena");
 
   await enviar("carga publicada", {
-    to: carga.empresa.email,
+    to: destinatario,
     subject: `Tu carga está publicada: ${carga.titulo}`,
     html: plantilla({
       titulo: "Tu carga está publicada",
@@ -110,13 +112,14 @@ export async function emailPrimeraPostulacion(cargaId: number) {
     }),
     db.postulacion.count({ where: { cargaId } }),
   ]);
-  if (!carga || postulaciones !== 1) return;
+  if (!carga?.empresa.email || postulaciones !== 1) return;
+  const destinatario = carga.empresa.email;
 
   const titulo = escapeHtml(carga.titulo);
   const link = absoluteUrl(`/empresa/cargas/${cargaId}`);
 
   await enviar("primera postulación", {
-    to: carga.empresa.email,
+    to: destinatario,
     subject: `Un transportista se postuló a tu carga: ${carga.titulo}`,
     html: plantilla({
       titulo: "Tenés una postulación",

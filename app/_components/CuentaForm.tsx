@@ -30,7 +30,8 @@ const labelStyle: React.CSSProperties = {
 };
 
 type Props = {
-  email: string;
+  /** null en cuentas que entran con el teléfono (ver telefonoLogin). */
+  email: string | null;
   emailVerified: boolean;
   phone: string | null;
   notifZonaLat: number | null;
@@ -118,8 +119,10 @@ export default function CuentaForm({
           className="rounded-xl border px-4 py-3 flex items-center justify-between gap-3"
           style={{ backgroundColor: "#FFFFFF", borderColor: "#E2E8E8" }}
         >
-          <span className="text-sm font-semibold text-gray-900 truncate">{email}</span>
-          {emailVerified && (
+          <span className="text-sm font-semibold text-gray-900 truncate">
+            {email ?? "Sin email: entrás con tu teléfono"}
+          </span>
+          {email && emailVerified && (
             <span
               className="text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0"
               style={{ backgroundColor: "#DCFCE7", color: "#166534" }}
@@ -128,7 +131,7 @@ export default function CuentaForm({
             </span>
           )}
         </div>
-        {!emailVerified && (
+        {email && !emailVerified && (
           <div className="mt-3">
             <VerificarEmailBanner emailVerified={false} />
           </div>

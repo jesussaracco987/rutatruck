@@ -4,17 +4,18 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { decrypt } from "@/lib/session";
 import truckImg from "@/app/assets/truck2.jpg";
-import { FREE_TIER, diasRestantesFreeTier } from "@/lib/free-tier";
+import { FREE_TIER, diasRestantesFreeTier, ultimoDiaFreeTier } from "@/lib/free-tier";
 import { OG_IMAGE, absoluteUrl } from "@/lib/site";
 import { getPrecioPublicacion } from "@/lib/comision";
 import ChatPublicar from "@/app/_components/publicar-chat/ChatPublicar";
 import JsonLd from "@/app/_components/JsonLd";
+import SumarmeTransportista from "@/app/_components/SumarmeTransportista";
 import type { Metadata } from "next";
 
 // Es lo que aparece cuando alguien busca "ClickCargo" en Google.
 const title = "ClickCargo: cargas y camiones conectados";
 const description =
-  "Conectamos a quien necesita enviar una carga con transportistas de todo el país. Publicá tu carga o encontrá viajes cerca, con avisos por zona y chat directo.";
+  "Conectamos a quien necesita enviar un paquete, un flete o una carga con transportistas y comisionistas de todo el país. Publicá tu envío o encontrá viajes cerca, con avisos por zona y chat directo.";
 
 export const metadata: Metadata = {
   title,
@@ -45,6 +46,7 @@ export default async function LandingPage() {
   if (session?.role) redirect(dashboardByRole[session.role]);
   const dias = diasRestantesFreeTier();
   const gratis = FREE_TIER && dias !== 0;
+  const ultimoDia = ultimoDiaFreeTier();
   const precioPublicacion = FREE_TIER ? 0 : await getPrecioPublicacion();
   return (
     <div
@@ -111,8 +113,10 @@ export default async function LandingPage() {
         >
           <div className="w-full lg:max-w-md lg:mx-auto flex flex-col gap-3">
           {/* Solo escritorio: en la PC sobra lugar para explicar qué es */}
-          <p className="hidden lg:block mb-2 text-base leading-relaxed" style={{ color: "#D1D5DB" }}>
-            Desde una caja hasta varios camiones: cualquier carga, a cualquier punto del país.
+          {/* También en el celular: sin esta línea, quien quiere mandar una caja
+              cree que la app es solo para camiones. */}
+          <p className="text-center lg:text-left text-sm lg:text-base lg:mb-2 leading-relaxed" style={{ color: "#D1D5DB" }}>
+            Desde una caja hasta varios camiones: cualquier envío, a cualquier punto del país.
           </p>
 
           <ChatPublicar freeTier={FREE_TIER} precioPublicacion={precioPublicacion} />
@@ -139,6 +143,10 @@ export default async function LandingPage() {
             </span>
           </Link>
 
+          <div className="flex justify-center">
+            <SumarmeTransportista variante="link" />
+          </div>
+
           {/* Quien llega desde redes sin conocer la app puede ver de qué se trata */}
           <p className="text-center text-xs" style={{ color: "#9CA3AF" }}>
             ¿Qué es ClickCargo?{" "}
@@ -152,13 +160,15 @@ export default async function LandingPage() {
           </p>
 
           {gratis && (
-            <div className="flex items-center justify-center gap-2 pt-1">
-              <span className="text-sm" style={{ color: "#9CA3AF" }}>Lanzamiento inicial</span>
+            <div className="flex flex-col items-center gap-1 pt-1 text-center">
               <span
                 className="text-sm font-black px-2.5 py-0.5 rounded-full"
                 style={{ backgroundColor: "#4ADE8022", color: "#4ADE80", border: "1px solid #4ADE8044" }}
               >
-                {dias === null ? "GRATIS" : dias === 1 ? "GRATIS hasta mañana" : `GRATIS ${dias} días más`}
+                {ultimoDia ? `GRATIS hasta el ${ultimoDia}` : "GRATIS por tiempo limitado"}
+              </span>
+              <span className="text-xs" style={{ color: "#9CA3AF" }}>
+                Publicar cargas y postularse no tiene costo.
               </span>
             </div>
           )}

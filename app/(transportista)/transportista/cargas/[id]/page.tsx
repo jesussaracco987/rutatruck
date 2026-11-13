@@ -18,7 +18,7 @@ import { resolverRondaPago } from "@/lib/services/comision.service";
 import RatingChip from "@/app/_components/RatingChip";
 import ResenaForm from "@/app/_components/ResenaForm";
 import { findResenasEscritasEnCarga } from "@/lib/repositories/resena.repository";
-import { esMatchConfirmado } from "@/lib/match";
+import { esMatchConfirmado, puedeChatear, chatPrevioHabilitado } from "@/lib/match";
 import { TIPO_CARGA_LABELS as TIPO_LABELS } from "@/lib/tipos-carga";
 
 export default async function CargaPublicaPage({
@@ -191,6 +191,14 @@ export default async function CargaPublicaPage({
           </div>
         )}
 
+        {error === "pago_pendiente" && (
+          <div className="mb-6 bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-3">
+            <p className="text-sm text-yellow-300">
+              Tu pago todavía no figura como acreditado. Cuando Mercado Pago lo apruebe se confirma solo; no hace falta pagar de nuevo.
+            </p>
+          </div>
+        )}
+
         {/* Sección de pago de comisión */}
         {pendePago && carga.transportistaPagoDeadline && (
           <div
@@ -258,7 +266,7 @@ export default async function CargaPublicaPage({
           </div>
         </div>
 
-        {soyAceptado && miPostulacion && esMatchConfirmado(miPostulacion) && (
+        {miPostulacion && puedeChatear({ ...miPostulacion, carga }) && (
           <Link
             href={`/transportista/conversaciones/${miPostulacion.id}`}
             className="rounded-xl border p-6 mb-6 flex items-center gap-4 transition-colors hover:border-[var(--primary-27)]"
@@ -274,10 +282,12 @@ export default async function CargaPublicaPage({
             </span>
             <div className="flex-1 min-w-0">
               <p className="font-medium" style={{ color: "var(--primary)" }}>
-                Chat con {carga.contactoNombre}
+                {soyAceptado ? `Chat con ${carga.contactoNombre}` : `Consultale a ${carga.contactoNombre}`}
               </p>
               <p className="text-sm mt-0.5" style={{ color: "#374151" }}>
-                Coordiná los detalles del viaje desde la app
+                {soyAceptado
+                  ? "Coordiná los detalles del viaje desde la app"
+                  : "Preguntá lo que necesites antes de que elija: medidas, horarios, precio"}
               </p>
             </div>
             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="var(--primary)" viewBox="0 0 24 24">
@@ -360,6 +370,7 @@ export default async function CargaPublicaPage({
             esFlota={isFlota(session.role, session.esFlota)}
             pesoUnidad={carga.pesoUnidad}
             emailVerified={user?.emailVerified ?? true}
+            chatPrevio={chatPrevioHabilitado() && carga.estado === "ACTIVA"}
           />
         )}
       </main>

@@ -3,10 +3,11 @@ import Link from "next/link";
 import JsonLd from "@/app/_components/JsonLd";
 import LogoClickCargo from "@/app/_components/LogoClickCargo";
 import truckImg from "@/app/assets/truck2.jpg";
-import { FREE_TIER, diasRestantesFreeTier } from "@/lib/free-tier";
+import { FREE_TIER, diasRestantesFreeTier, ultimoDiaFreeTier } from "@/lib/free-tier";
 import { playStoreUrl, whatsappUrl } from "@/lib/site";
 import { getPrecioPublicacion } from "@/lib/comision";
 import ChatPublicar from "@/app/_components/publicar-chat/ChatPublicar";
+import SumarmeTransportista from "@/app/_components/SumarmeTransportista";
 
 export type LandingVariant = "empresa" | "transportista";
 
@@ -55,8 +56,9 @@ const COPY: Record<LandingVariant, Copy> = {
         detalle: "Sin formularios largos: lo contás con tus palabras. Si preferís, el formulario sigue disponible.",
       },
       {
-        titulo: "Transportistas de la zona",
-        detalle: "Tu carga le llega como aviso a los transportistas que trabajan cerca del origen.",
+        titulo: "Con quien ya va para ese lado",
+        detalle:
+          "Tu carga le llega a los transportistas de la zona y a los que ya tienen un viaje por esa ruta: comisionistas y camiones que vuelven con lugar libre.",
       },
       {
         titulo: "Reputación a la vista",
@@ -67,7 +69,7 @@ const COPY: Record<LandingVariant, Copy> = {
         detalle: "Si la carga necesita más de un vehículo, lo indicás al publicar.",
       },
     ],
-    gratisDetalle: "Publicá todas las cargas que necesites sin pagar nada y sin cargar tarjeta.",
+    gratisDetalle: "Publicá todas las cargas que necesites sin pagar nada.",
     preguntas: [
       {
         pregunta: "¿Tengo que registrarme antes?",
@@ -87,6 +89,11 @@ const COPY: Record<LandingVariant, Copy> = {
         pregunta: "¿Qué tipo de cargas puedo publicar?",
         respuesta:
           "La que necesites mover: una mudanza, pallets, materiales de obra, una máquina, mercadería refrigerada o cereal. Desde un flete chico en utilitario hasta varios camiones completos.",
+      },
+      {
+        pregunta: "¿Sirve para mandar una caja o un paquete?",
+        respuesta:
+          "Sí. Muchos transportistas y comisionistas anuncian el viaje que ya van a hacer y cuánto lugar les queda. Si tu envío les queda de paso, les avisamos y se postulan. Antes de elegir podés escribirles por el chat.",
       },
       {
         pregunta: "¿Tengo que instalar algo?",
@@ -133,8 +140,9 @@ const COPY: Record<LandingVariant, Copy> = {
         detalle: "Elegís un radio de 50, 100 o 200 km alrededor de tu localidad, o todo el país.",
       },
       {
-        titulo: "Que te encuentren",
-        detalle: "Marcá que estás disponible y las empresas te ven en el mapa y te mandan pedidos directos.",
+        titulo: "Llená el lugar libre",
+        detalle:
+          "Anunciá el viaje que ya vas a hacer y cuánto lugar te queda. Te avisamos de los envíos que te quedan de paso, y quienes tienen cargas te ven en el mapa.",
       },
       {
         titulo: "Un utilitario o una flota",
@@ -142,15 +150,20 @@ const COPY: Record<LandingVariant, Copy> = {
       },
       {
         titulo: "Tu reputación suma",
-        detalle: "Calificaciones, viajes hechos y antigüedad: es lo que las empresas ven al elegir.",
+        detalle: "Calificaciones, viajes hechos y antigüedad: es lo que miran al elegirte.",
       },
     ],
-    gratisDetalle: "Postulate a todas las cargas que quieras, sin comisión y sin cargar tarjeta.",
+    gratisDetalle: "Postulate a todas las cargas que quieras, sin comisión.",
     preguntas: [
       {
         pregunta: "¿Sirve si tengo un solo vehículo?",
         respuesta:
           "Sí. Al registrarte elegís si trabajás con un vehículo o con una flota de dos o más. Hay cargas para utilitarios y camionetas, no solo para camiones.",
+      },
+      {
+        pregunta: "¿Sirve si soy comisionista?",
+        respuesta:
+          "Sí. Cargá tu recorrido, la fecha y el lugar que te queda (por ejemplo, \"entran 3 cajas\"). Cuando alguien publica un envío que te queda de paso te llega un aviso, y podés chatear con el cliente antes de que elija.",
       },
       {
         pregunta: "¿Qué tipo de cargas hay?",
@@ -299,10 +312,13 @@ export default async function Landing({ variant }: { variant: LandingVariant }) 
               {copy.bajada}
             </p>
 
-            <div className="mt-8 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="mt-8 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
               {/* En empresas el chat ya está al lado (o abajo en el celular): no hace falta el botón. */}
               {!esEmpresa && <BotonPrincipal href={copy.ctaHref}>{copy.cta}</BotonPrincipal>}
-              {whatsapp && (
+              {/* Transportistas: en vez de un WhatsApp suelto, el alta asistida
+                  (deja los datos, sigue por WhatsApp y le creamos la cuenta). */}
+              {!esEmpresa && <SumarmeTransportista />}
+              {esEmpresa && whatsapp && (
                 <a
                   href={whatsapp}
                   target="_blank"
@@ -324,11 +340,9 @@ export default async function Landing({ variant }: { variant: LandingVariant }) 
                 >
                   GRATIS
                 </span>
-                {dias === null
-                  ? "por tiempo limitado, sin tarjeta"
-                  : dias === 1
-                    ? "último día de la promoción de lanzamiento"
-                    : `quedan ${dias} días de la promoción de lanzamiento`}
+                {ultimoDiaFreeTier()
+                  ? `durante el lanzamiento, hasta el ${ultimoDiaFreeTier()}`
+                  : "durante el lanzamiento"}
               </p>
             )}
           </div>
@@ -470,6 +484,11 @@ export default async function Landing({ variant }: { variant: LandingVariant }) 
                 Descargar en Play Store
               </a>
             </div>
+            {!esEmpresa && (
+              <div className="mt-3 mx-auto max-w-sm flex justify-center">
+                <SumarmeTransportista />
+              </div>
+            )}
             <p className="mt-10 text-sm" style={{ color: "#6B7280" }}>
               {copy.otra.texto}{" "}
               <Link href={copy.otra.href} className="font-semibold" style={{ color: VERDE }}>

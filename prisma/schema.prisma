@@ -9,10 +9,17 @@ datasource db {
 model User {
   id                String             @id @default(cuid())
   name              String
-  email             String             @unique
+  /// Opcional: las cuentas creadas por WhatsApp o por el alta asistida pueden
+  /// no tener email y entrar con `telefonoLogin`.
+  email             String?            @unique
   password          String
   role              Role
   phone             String?
+  /// Teléfono con el que entra (formato wa.me, "549..."). Solo se completa
+  /// cuando el teléfono está confirmado: lo cargó el equipo después de hablar
+  /// por WhatsApp, o vino del propio WhatsApp. Es distinto de `phone`, que es
+  /// un dato de contacto que cualquiera escribe y puede repetirse.
+  telefonoLogin     String?            @unique
   createdAt         DateTime           @default(now())
   esFlota           Boolean            @default(false)
   emailVerified     Boolean            @default(false)
@@ -230,7 +237,10 @@ model PushSubscription {
 
 model PasswordResetToken {
   id        String   @id @default(cuid())
-  email     String
+  /// Recuperar contraseña por email. Los links de acceso de cuentas sin email
+  /// (activación, WhatsApp) van por `userId`.
+  email     String?
+  userId    String?
   token     String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
@@ -339,4 +349,30 @@ enum EstadoPostulacion {
   PENDIENTE
   ACEPTADA
   RECHAZADA
+}
+
+/// Pedido de alta de un transportista que prefiere que le creemos la cuenta
+/// (botón "Quiero sumarme" de las landings). Lo completa en un formulario
+/// corto, sigue la charla por WhatsApp y un admin le crea la cuenta desde
+/// /admin/solicitudes. Guarda el canal de origen para atribuir la campaña.
+model SolicitudTransportista {
+  id              String   @id @default(cuid())
+  nombre          String
+  telefono        String
+  email           String?
+  localidad       String?
+  vehiculo        String?
+  /// PENDIENTE | CUENTA_CREADA | DESCARTADA
+  estado          String   @default("PENDIENTE")
+  userId          String?
+  creadaEn        DateTime @default(now())
+  atendidaEn      DateTime?
+  origenFuente    String?
+  origenMedio     String?
+  origenCampania  String?
+  origenContenido String?
+  origenLanding   String?
+  origenReferrer  String?
+
+  @@index([estado, creadaEn])
 }

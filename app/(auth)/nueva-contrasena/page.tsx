@@ -9,6 +9,8 @@ function NuevaContrasenaForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const token = searchParams.get("token") ?? "";
+  // Cuenta creada por el equipo (alta asistida): es la primera contraseña.
+  const activar = searchParams.get("activar") === "1";
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -63,7 +65,9 @@ function NuevaContrasenaForm() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h2 className="text-2xl font-black text-white">¡Contraseña actualizada!</h2>
+        <h2 className="text-2xl font-black text-white">
+          {activar ? "¡Tu cuenta está activa!" : "¡Contraseña actualizada!"}
+        </h2>
         <p className="text-sm" style={{ color: "#6B7280" }}>
           Redirigiendo al inicio de sesión...
         </p>
@@ -73,9 +77,13 @@ function NuevaContrasenaForm() {
 
   return (
     <>
-      <h2 className="text-2xl font-black text-white mb-1">Nueva contraseña</h2>
+      <h2 className="text-2xl font-black text-white mb-1">
+        {activar ? "Activá tu cuenta" : "Nueva contraseña"}
+      </h2>
       <p className="text-sm mb-8" style={{ color: "#6B7280" }}>
-        Ingresá tu nueva contraseña.
+        {activar
+          ? "Ya creamos tu cuenta de transportista. Elegí una contraseña para entrar."
+          : "Ingresá tu nueva contraseña."}
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -153,8 +161,15 @@ function NuevaContrasenaForm() {
           className="w-full font-bold rounded-xl py-3.5 transition-opacity cursor-pointer disabled:opacity-50 text-sm tracking-wide active:opacity-80 mt-2"
           style={{ backgroundColor: "rgba(255,255,255,0.93)", color: "#060F0F" }}
         >
-          {pending ? "Guardando..." : "GUARDAR CONTRASEÑA"}
+          {pending ? "Guardando..." : activar ? "ACTIVAR CUENTA" : "GUARDAR CONTRASEÑA"}
         </button>
+        {activar && (
+          <p className="text-xs text-center" style={{ color: "#6B7280" }}>
+            Al activar tu cuenta aceptás los{" "}
+            <Link href="/terminos" className="underline">Términos</Link> y la{" "}
+            <Link href="/politica-de-privacidad" className="underline">Política de Privacidad</Link>.
+          </p>
+        )}
       </form>
     </>
   );

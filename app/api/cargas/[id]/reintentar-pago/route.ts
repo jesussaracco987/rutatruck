@@ -11,7 +11,7 @@ export async function POST(
 ) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  if (!isEmpresa(session.role)) return NextResponse.json({ error: "Solo empresas" }, { status: 403 });
+  if (!isEmpresa(session.role)) return NextResponse.json({ error: "Solo quien publica la carga puede hacer esto" }, { status: 403 });
 
   const { id } = await params;
   const cargaId = parseInt(id);
@@ -39,7 +39,7 @@ export async function POST(
     back_urls: {
       success: `${origin}/api/pagos/success`,
       failure: `${origin}/api/pagos/failure`,
-      pending: `${origin}/api/pagos/failure`,
+      pending: `${origin}/api/pagos/success`,
     },
     auto_return: "approved",
     statement_descriptor: "ClickCargo",

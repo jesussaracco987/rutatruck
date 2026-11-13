@@ -24,6 +24,23 @@ export function finFreeTier(): Date | null {
 }
 
 /**
+ * Último día gratis en texto ("15 de diciembre"). Es el día anterior a
+ * `FIN_FREE_TIER`, que marca la medianoche en que termina. Se muestra la fecha
+ * en lugar de "60 días gratis" o "quedan N días": los dos números juntos en
+ * distintas pantallas parecían promociones distintas.
+ */
+export function ultimoDiaFreeTier(): string | null {
+  const fin = finFreeTier();
+  if (!fin) return null;
+  const ultimo = new Date(fin.getTime() - 1);
+  return ultimo.toLocaleDateString("es-AR", {
+    day: "numeric",
+    month: "long",
+    timeZone: "America/Argentina/Buenos_Aires",
+  });
+}
+
+/**
  * Días completos que faltan para que termine la promoción, o `null` si no hay
  * fecha de fin configurada. Nunca devuelve negativo: si ya venció, devuelve 0.
  */

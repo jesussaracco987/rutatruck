@@ -195,7 +195,7 @@ export default function EditarCargaPanel({ carga, sinTransportista }: { carga: C
           ) : (
             <div>
               <label htmlFor="edit-cantidadCamiones" className={labelClass} style={labelStyle}>
-                ¿Cuántos camiones necesitás? *
+                ¿Cuántos vehículos necesitás? *
               </label>
               <input
                 id="edit-cantidadCamiones"

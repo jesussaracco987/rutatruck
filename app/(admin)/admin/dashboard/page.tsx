@@ -16,12 +16,13 @@ export default async function AdminDashboard() {
     );
   }
 
-  const [empresas, transportistas, cargas, disputas, comision] = await Promise.all([
+  const [empresas, transportistas, cargas, disputas, comision, solicitudesPendientes] = await Promise.all([
     db.user.count({ where: { role: "EMPRESA" } }),
     db.user.count({ where: { role: "TRANSPORTISTA" } }),
     db.carga.count(),
     db.carga.count({ where: { estado: "DISPUTA" } }),
     getComisionConfig(),
+    db.solicitudTransportista.count({ where: { estado: "PENDIENTE" } }),
   ]);
 
   return (
@@ -116,6 +117,30 @@ export default async function AdminDashboard() {
             })}
           </div>
         </div>
+
+        <a
+          href="/admin/solicitudes"
+          className="block rounded-xl border p-6 transition-opacity hover:opacity-80"
+          style={{ backgroundColor: "#112424", borderColor: solicitudesPendientes > 0 ? "#F59E0B" : "var(--primary-20)" }}
+        >
+          <h3 className="font-semibold text-white mb-1">
+            Solicitudes de transportistas{solicitudesPendientes > 0 ? ` (${solicitudesPendientes} pendientes)` : ""} →
+          </h3>
+          <p className="text-sm" style={{ color: "#A8C5C5" }}>
+            Pidieron que les creemos la cuenta desde &quot;Quiero sumarme&quot;.
+          </p>
+        </a>
+
+        <a
+          href="/admin/metricas"
+          className="block rounded-xl border p-6 transition-opacity hover:opacity-80"
+          style={{ backgroundColor: "#112424", borderColor: "var(--primary-20)" }}
+        >
+          <h3 className="font-semibold text-white mb-1">Métricas →</h3>
+          <p className="text-sm" style={{ color: "#A8C5C5" }}>
+            Registros por canal y campaña, y hasta dónde llega cada uno en el embudo.
+          </p>
+        </a>
 
         <a
           href="/admin/asistente"

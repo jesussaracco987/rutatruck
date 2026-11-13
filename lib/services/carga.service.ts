@@ -117,7 +117,7 @@ export async function publicarCargaConPago(
       back_urls: {
         success: `${origin}/api/pagos/success`,
         failure: `${origin}/api/pagos/failure`,
-        pending: `${origin}/api/pagos/failure`,
+        pending: `${origin}/api/pagos/success`,
       },
       auto_return: "approved",
       statement_descriptor: "ClickCargo",

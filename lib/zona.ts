@@ -101,3 +101,43 @@ export function viajePasaPorZona(zona: Zona, origen: Punto, destino: Punto): boo
   if (d === null) return false;
   return d <= Math.max(zona.notifRadioKm!, CORREDOR_KM);
 }
+
+/**
+ * Posición de P a lo largo del tramo A→B: 0 en A, 1 en B (puede salirse de
+ * [0, 1]). Misma proyección local que distanciaASegmentoKm.
+ */
+function posicionEnTramo(p: Punto, a: Punto, b: Punto): number {
+  const kmLat = 110.57;
+  const kmLng = 111.32 * Math.cos((a.lat * Math.PI) / 180);
+  const bx = (b.lng - a.lng) * kmLng, by = (b.lat - a.lat) * kmLat;
+  const px = (p.lng - a.lng) * kmLng, py = (p.lat - a.lat) * kmLat;
+  const len2 = bx * bx + by * by;
+  return len2 === 0 ? 0 : (px * bx + py * by) / len2;
+}
+
+/**
+ * Ancho del corredor para "de paso": la ruta real se aleja de la línea recta
+ * más cuanto más largo es el viaje (Rosario → Córdoba por la RN9 pasa a ~60 km
+ * de la recta en Villa María). 20 % del largo, entre CORREDOR_KM y 100 km.
+ */
+function corredorDePasoKm(a: Punto, b: Punto): number {
+  const largo = distanciaASegmentoKm(a, b, b);
+  return Math.min(100, Math.max(CORREDOR_KM, largo * 0.2));
+}
+
+/**
+ * La carga "le queda de paso" a un viaje anunciado: el retiro y la entrega
+ * caen dentro del corredor del viaje, y en el mismo sentido (retira antes de
+ * entregar). Es lo que conecta un envío chico con un comisionista o con un
+ * transportista que vuelve vacío, sin que ninguno de los dos tenga que buscar.
+ */
+export function cargaQuedaDePaso(
+  carga: { origen: Punto; destino: Punto },
+  viaje: { origen: Punto; destino: Punto },
+): boolean {
+  const { origen: a, destino: b } = viaje;
+  const corredor = corredorDePasoKm(a, b);
+  if (distanciaASegmentoKm(carga.origen, a, b) > corredor) return false;
+  if (distanciaASegmentoKm(carga.destino, a, b) > corredor) return false;
+  return posicionEnTramo(carga.origen, a, b) <= posicionEnTramo(carga.destino, a, b);
+}

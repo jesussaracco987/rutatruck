@@ -1,10 +1,12 @@
 /**
- * Cartel de la promoción de lanzamiento (60 días gratis).
+ * Cartel de la promoción de lanzamiento (gratis hasta una fecha fija).
  *
  * Sin hooks a propósito: así se puede renderizar tanto desde un Server
  * Component (pantalla de cargas de empresa) como desde dentro de un Client
  * Component (wrapper de cargas del transportista).
  */
+
+import { ultimoDiaFreeTier } from "@/lib/free-tier";
 
 type Props = {
   role: "empresa" | "transportista";
@@ -14,17 +16,17 @@ type Props = {
 
 const COPY = {
   empresa: {
-    titulo: "60 días gratis",
     detalle: "Publicá todas las cargas que necesites sin pagar nada.",
   },
   transportista: {
-    titulo: "60 días gratis",
     detalle: "Postulate a todas las cargas que quieras, sin comisión.",
   },
 } as const;
 
 export default function FreeTierBanner({ role, diasRestantes }: Props) {
-  const { titulo, detalle } = COPY[role];
+  const { detalle } = COPY[role];
+  const ultimoDia = ultimoDiaFreeTier();
+  const titulo = ultimoDia ? `Gratis hasta el ${ultimoDia}` : "Gratis por tiempo limitado";
 
   if (diasRestantes === 0) return null;
 

@@ -3,6 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import LogoClickCargo from "@/app/_components/LogoClickCargo";
+import { whatsappUrl } from "@/lib/site";
+
+const whatsappRecuperar = whatsappUrl("Hola, entro a ClickCargo con mi teléfono y necesito un link para cambiar la contraseña.");
 
 export default function RecuperarContrasenaPage() {
   const [email, setEmail] = useState("");
@@ -116,6 +119,23 @@ export default function RecuperarContrasenaPage() {
                 {pending ? "Enviando..." : "ENVIAR ENLACE"}
               </button>
             </form>
+
+            {/* Las cuentas que entran con el teléfono no tienen email: el link
+                lo genera el equipo desde /admin/solicitudes. */}
+            {whatsappRecuperar && (
+              <p className="mt-5 text-center text-sm" style={{ color: "#9CA3AF" }}>
+                ¿Entrás con tu teléfono?{" "}
+                <a
+                  href={whatsappRecuperar}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold underline underline-offset-2"
+                  style={{ color: "#4ADE80" }}
+                >
+                  Pedinos el link por WhatsApp
+                </a>
+              </p>
+            )}
 
             <p className="mt-5 text-center">
               <Link

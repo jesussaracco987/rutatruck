@@ -29,6 +29,7 @@ function gtag(..._args: unknown[]) {
 // hay uno que corresponde; el resto va como evento personalizado.
 const EVENTOS_META: Record<string, { nombre: string; estandar: boolean }> = {
   sign_up: { nombre: "CompleteRegistration", estandar: true },
+  lead_transportista: { nombre: "Lead", estandar: true },
   postulacion_enviada: { nombre: "SubmitApplication", estandar: true },
   carga_publicada: { nombre: "CargaPublicada", estandar: false },
   viaje_concretado: { nombre: "ViajeConcretado", estandar: false },

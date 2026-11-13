@@ -10,6 +10,7 @@ import { signup } from "@/app/actions/auth";
 import type { FormState } from "@/app/actions/auth";
 import LocationAutocomplete from "@/app/(empresa)/empresa/cargas/nueva/_components/LocationAutocomplete";
 import { RADIOS } from "@/lib/radios";
+import { ultimoDiaFreeTier } from "@/lib/free-tier";
 
 export default function RegistroPage({
   searchParams,
@@ -68,7 +69,7 @@ export default function RegistroPage({
 
         <h2 className="text-2xl font-black text-white mb-1">Crear cuenta</h2>
         <p className="text-sm mb-8" style={{ color: "#6B7280" }}>
-          Empezá gratis, sin tarjeta de crédito
+          Crear tu cuenta es gratis
         </p>
 
         <form action={action} onFocus={alEmpezar} className="space-y-4">
@@ -280,8 +281,10 @@ export default function RegistroPage({
         </form>
 
         <div className="mt-5 flex items-center justify-center gap-2">
-          <span className="text-sm" style={{ color: "#9CA3AF" }}>60 días gratis —</span>
-          <span className="text-sm font-bold" style={{ color: "#4ADE80" }}>sin tarjeta</span>
+          <span className="text-sm" style={{ color: "#9CA3AF" }}>Lanzamiento:</span>
+          <span className="text-sm font-bold" style={{ color: "#4ADE80" }}>
+            {ultimoDiaFreeTier() ? `gratis hasta el ${ultimoDiaFreeTier()}` : "gratis por tiempo limitado"}
+          </span>
         </div>
 
         <p className="mt-4 text-center text-sm" style={{ color: "#6B7280" }}>

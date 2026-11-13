@@ -22,7 +22,8 @@ import BadgeVerificado from "@/app/_components/BadgeVerificado";
 import ResenaForm from "@/app/_components/ResenaForm";
 import { findResenasEscritasEnCarga } from "@/lib/repositories/resena.repository";
 import { DIAS_GRACIA_CANCELADA, DIAS_EN_CONFIRMACION_ABANDONADA } from "@/lib/plazos";
-import { esMatchConfirmado } from "@/lib/match";
+import { esMatchConfirmado, chatPrevioHabilitado } from "@/lib/match";
+import { findTransportistasConViajeDePaso } from "@/lib/repositories/disponibilidad.repository";
 
 const ESTADO_LABELS: Record<string, { label: string; badgeStyle: CSSProperties }> = {
   PENDIENTE_PAGO: { label: "Pago pendiente", badgeStyle: { backgroundColor: "#FEF9C3", color: "#A16207", border: "1px solid #FEF08A" } },
@@ -122,6 +123,16 @@ export default async function CargaDetallePage({
     });
   const sinPagar = asignados.filter((t) => !t.confirmado);
 
+  // Consulta previa por chat con cada postulante (ver lib/match.ts).
+  const chatPrevio = chatPrevioHabilitado() && carga.estado === "ACTIVA";
+
+  // Transportistas con un viaje anunciado al que esta carga le queda de paso:
+  // son los mismos que recibieron el aviso "Te queda de paso" al publicarla.
+  const viajesDePaso =
+    carga.estado === "ACTIVA" && !carga.esPrivada
+      ? (await findTransportistasConViajeDePaso(carga)).length
+      : 0;
+
   const puedeEditar = carga.estado === "ACTIVA";
   const puedeCancelar = carga.estado === "ACTIVA";
   const pendientePago = carga.estado === "PENDIENTE_PAGO";
@@ -191,6 +202,14 @@ export default async function CargaDetallePage({
           <div className="mb-6 bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-3">
             <p className="text-sm text-yellow-300">
               El pago fue cancelado. Podés intentarlo nuevamente.
+            </p>
+          </div>
+        )}
+
+        {error === "pago_pendiente" && carga.estado === "PENDIENTE_PAGO" && (
+          <div className="mb-6 bg-yellow-500/10 border border-yellow-500/30 rounded-xl px-4 py-3">
+            <p className="text-sm text-yellow-300">
+              Tu pago todavía no figura como acreditado. Cuando Mercado Pago lo apruebe, la carga se publica sola; no hace falta pagar de nuevo.
             </p>
           </div>
         )}
@@ -447,7 +466,7 @@ export default async function CargaDetallePage({
                   <div className="mt-2">
                     <p className="text-sm mb-1.5" style={{ color: cubiertos >= carga.cantidadCamiones ? "var(--primary)" : "#374151" }}>
                       <span className="font-semibold">{cubiertos}</span> de{" "}
-                      <span className="font-semibold">{carga.cantidadCamiones}</span> camiones cubiertos
+                      <span className="font-semibold">{carga.cantidadCamiones}</span> vehículos cubiertos
                     </p>
                     <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: "#E2E8E8", width: "160px" }}>
                       <div
@@ -463,6 +482,26 @@ export default async function CargaDetallePage({
               <CerrarConvocatoriaButton cargaId={carga.id} />
             )}
           </div>
+
+          {viajesDePaso > 0 && (
+            <div
+              className="rounded-xl border px-4 py-3 mb-4 flex items-start gap-3"
+              style={{ backgroundColor: "#E0F2FE", borderColor: "#BAE6FD" }}
+            >
+              <span aria-hidden="true">🚚</span>
+              <p className="text-sm" style={{ color: "#075985" }}>
+                <span className="font-semibold">
+                  {viajesDePaso === 1
+                    ? "1 transportista ya hace este viaje"
+                    : `${viajesDePaso} transportistas ya hacen este viaje`}
+                </span>{" "}
+                en una fecha cercana. Les avisamos que tu carga les queda de paso.{" "}
+                <Link href="/empresa/transportistas" className="font-semibold underline underline-offset-2">
+                  Ver en el mapa
+                </Link>
+              </p>
+            </div>
+          )}
 
           {carga.postulaciones.length === 0 ? (
             <p className="text-sm text-center py-6" style={{ color: "#6B7280" }}>
@@ -496,7 +535,7 @@ export default async function CargaDetallePage({
                           <BadgeVerificado verificado={p.transportista.emailVerified} />
                           {p.camionesCubiertos > 1 && (
                             <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: "#E0F2FE", color: "#0369A1" }}>
-                              {p.camionesCubiertos} camiones
+                              {p.camionesCubiertos} vehículos
                             </span>
                           )}
                           {p.precioOfrecido != null && (
@@ -509,7 +548,9 @@ export default async function CargaDetallePage({
                             "Transportista asignado", una vez confirmado el viaje. */}
                         {p.estado === "PENDIENTE" && (
                           <p className="text-xs mt-0.5" style={{ color: "#6B7280" }}>
-                            Vas a ver sus datos de contacto cuando lo selecciones.
+                            {chatPrevio
+                              ? "Podés escribirle antes de elegir. Sus datos de contacto aparecen cuando lo selecciones."
+                              : "Vas a ver sus datos de contacto cuando lo selecciones."}
                           </p>
                         )}
                         {p.mensaje && (
@@ -534,6 +575,18 @@ export default async function CargaDetallePage({
                         )}
                       </div>
                     </div>
+                    {chatPrevio && p.estado === "PENDIENTE" && (
+                      <Link
+                        href={`/empresa/conversaciones/${p.id}`}
+                        className="flex items-center justify-center gap-2 w-full rounded-xl border px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-80"
+                        style={{ borderColor: "var(--primary-20)", color: "var(--primary)", backgroundColor: "#FFFFFF" }}
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        Chatear con {p.transportista.name.split(" ")[0]}
+                      </Link>
+                    )}
                     {p.estado === "PENDIENTE" && carga.estado === "ACTIVA" && (
                       <SeleccionarButton
                         cargaId={carga.id}
@@ -556,7 +609,7 @@ export default async function CargaDetallePage({
           >
             <h2 className="font-medium text-gray-900 mb-1">Calificá el viaje</h2>
             <p className="text-sm mb-4" style={{ color: "#6B7280" }}>
-              Tu calificación ayuda a que otras empresas sepan con quién están tratando.
+              Tu calificación ayuda a que otros sepan con quién están tratando.
             </p>
             <div className="space-y-4">
               {asignados.map((t) =>

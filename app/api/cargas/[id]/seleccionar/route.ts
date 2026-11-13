@@ -12,7 +12,7 @@ export async function POST(
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
   if (!isEmpresa(session.role)) {
-    return NextResponse.json({ error: "Solo empresas" }, { status: 403 });
+    return NextResponse.json({ error: "Solo quien publica la carga puede hacer esto" }, { status: 403 });
   }
 
   const { id } = await params;
