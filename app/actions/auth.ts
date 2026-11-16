@@ -85,15 +85,55 @@ export async function login(
 
   const telefono = pareceTelefono(identificador) ? normalizarTelefono(identificador) : null;
   const user = telefono
-    ? await db.user.findUnique({ where: { telefonoLogin: telefono } })
-    : await db.user.findUnique({ where: { email: identificador } });
+    ? await usuarioPorTelefono(telefono, password)
+    : await usuarioPorEmail(identificador, password);
+  if (user === "varias") {
+    return { error: "Ese teléfono está en más de una cuenta. Entrá con tu email." };
+  }
   if (!user) return { error: "Credenciales inválidas" };
-
-  const valid = await bcrypt.compare(password, user.password);
-  if (!valid) return { error: "Credenciales inválidas" };
 
   await createSession(user.id, user.role as Role, user.esFlota);
   redirect(destinoTrasLogin(formData.get("volver"), user.role as Role) ?? dashboardByRole[user.role as Role]);
+}
+
+type UsuarioLogin = { id: string; role: string; esFlota: boolean; password: string };
+
+async function usuarioPorEmail(email: string, password: string): Promise<UsuarioLogin | null> {
+  const user = await db.user.findUnique({ where: { email } });
+  return user && (await bcrypt.compare(password, user.password)) ? user : null;
+}
+
+/**
+ * Primero por `telefonoLogin` (confirmado, único). Si no hay, por `phone`: el
+ * teléfono de contacto que la gente carga en su perfil o al registrarse. Ese
+ * campo es texto libre y puede repetirse, así que se comparan las versiones
+ * normalizadas y solo entra si la contraseña coincide con una única cuenta.
+ * Si coincide con varias devuelve "varias": no hay forma de saber cuál quiere,
+ * y como ya probó tener la contraseña, se le puede decir que use el email.
+ */
+async function usuarioPorTelefono(
+  telefono: string,
+  password: string
+): Promise<UsuarioLogin | "varias" | null> {
+  const confirmado = await db.user.findUnique({ where: { telefonoLogin: telefono } });
+  if (confirmado) {
+    return (await bcrypt.compare(password, confirmado.password)) ? confirmado : null;
+  }
+
+  // `phone` se guarda como lo escribió la persona ("0221 15...", "+54 9 221..."):
+  // se prefiltra en la base por los últimos 4 dígitos (rara vez llevan
+  // separadores en el medio) y se normaliza acá.
+  const candidatos = await db.user.findMany({
+    where: { phone: { contains: telefono.slice(-4) } },
+    select: { id: true, role: true, esFlota: true, password: true, phone: true },
+  });
+  const coincidentes = candidatos.filter((u) => u.phone && normalizarTelefono(u.phone) === telefono);
+  const validos: UsuarioLogin[] = [];
+  for (const u of coincidentes) {
+    if (await bcrypt.compare(password, u.password)) validos.push(u);
+  }
+  if (validos.length > 1) return "varias";
+  return validos[0] ?? null;
 }
 
 /**
