@@ -1,12 +1,23 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import LocationAutocomplete, {
   type LocationSelection,
 } from "@/app/(empresa)/empresa/cargas/nueva/_components/LocationAutocomplete";
 import VerificarEmailBanner from "@/app/_components/VerificarEmailBanner";
 import { radiosConActual } from "@/lib/radios";
+import { VERIFICACION_TELEFONO_HABILITADA } from "@/lib/verificacion-telefono";
+
+/** Cada cuánto y hasta cuándo se consulta si llegó el WhatsApp de confirmación. */
+const CONSULTA_CADA_MS = 4000;
+const CONSULTA_HASTA_MS = 10 * 60 * 1000;
+
+/** "5492215475754" → "+54 9 221 547-5754" (área de 3 dígitos, la más común; es solo para mostrar). */
+function mostrarTelefono(tel: string): string {
+  const m = tel.match(/^549(\d{3})(\d{3})(\d{4})$/);
+  return m ? `+54 9 ${m[1]} ${m[2]}-${m[3]}` : `+${tel}`;
+}
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
@@ -34,6 +45,8 @@ type Props = {
   email: string | null;
   emailVerified: boolean;
   phone: string | null;
+  /** Teléfono confirmado por WhatsApp, con el que también puede entrar. */
+  telefonoLogin: string | null;
   notifZonaLat: number | null;
   notifZonaLng: number | null;
   notifRadioKm: number | null;
@@ -63,6 +76,7 @@ export default function CuentaForm({
   email,
   emailVerified,
   phone: initialPhone,
+  telefonoLogin: initialTelefonoLogin,
   notifZonaLat,
   notifZonaLng,
   notifRadioKm,
@@ -83,6 +97,44 @@ export default function CuentaForm({
   const [hasZona, setHasZona] = useState(notifZonaLat != null && notifZonaLng != null);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
+  const [telefonoLogin, setTelefonoLogin] = useState(initialTelefonoLogin);
+  const [esperandoWhatsapp, setEsperandoWhatsapp] = useState(false);
+  const [errorConfirmacion, setErrorConfirmacion] = useState("");
+  const consulta = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => () => {
+    if (consulta.current) clearInterval(consulta.current);
+  }, []);
+
+  async function handleConfirmarTelefono() {
+    setErrorConfirmacion("");
+    // La pestaña se abre antes del fetch: si se abre después, el navegador
+    // (sobre todo en el celular) la toma como popup y la bloquea.
+    const ventana = window.open("", "_blank");
+    const res = await fetch("/api/perfil/telefono", { method: "POST" });
+    const data = res.ok ? ((await res.json()) as { url: string }) : null;
+    if (!data) {
+      ventana?.close();
+      setErrorConfirmacion("No pudimos abrir WhatsApp. Intentá de nuevo en un rato.");
+      return;
+    }
+    if (ventana) ventana.location.href = data.url;
+    else window.location.href = data.url;
+
+    // Cuando llega el mensaje, el webhook guarda el teléfono: se consulta hasta verlo.
+    setEsperandoWhatsapp(true);
+    if (consulta.current) clearInterval(consulta.current);
+    const inicio = Date.now();
+    consulta.current = setInterval(async () => {
+      const r = await fetch("/api/perfil").catch(() => null);
+      const confirmado = r?.ok ? ((await r.json()) as { user: { telefonoLogin: string | null } }).user.telefonoLogin : null;
+      if (confirmado || Date.now() - inicio > CONSULTA_HASTA_MS) {
+        if (confirmado) setTelefonoLogin(confirmado);
+        setEsperandoWhatsapp(false);
+        if (consulta.current) clearInterval(consulta.current);
+      }
+    }, CONSULTA_CADA_MS);
+  }
 
   function handleGuardar() {
     setError("");
@@ -151,9 +203,32 @@ export default function CuentaForm({
           onChange={(e) => setPhone(e.target.value)}
           style={inputStyle}
         />
-        <p className="text-xs mt-1.5" style={{ color: "#9CA3AF" }}>
-          Sin verificar por ahora
-        </p>
+        {telefonoLogin ? (
+          <p className="text-xs mt-1.5 font-semibold" style={{ color: "#166534" }}>
+            ✓ Confirmado por WhatsApp: {mostrarTelefono(telefonoLogin)}. Podés entrar con este número.
+          </p>
+        ) : VERIFICACION_TELEFONO_HABILITADA ? (
+          <div className="mt-2 space-y-1.5">
+            <button
+              type="button"
+              onClick={handleConfirmarTelefono}
+              className="w-full py-2.5 rounded-xl border text-sm font-semibold"
+              style={{ backgroundColor: "#FFFFFF", borderColor: "#25D366", color: "#128C7E" }}
+            >
+              Confirmar por WhatsApp
+            </button>
+            <p className="text-xs" style={{ color: errorConfirmacion ? "#DC2626" : "#9CA3AF" }}>
+              {errorConfirmacion ||
+                (esperandoWhatsapp
+                  ? "Enviá el mensaje que se abrió en WhatsApp sin cambiarlo. Esta pantalla se actualiza sola."
+                  : "Se abre WhatsApp con un mensaje listo para enviar. Así confirmás que el número es tuyo y podés entrar con él.")}
+            </p>
+          </div>
+        ) : (
+          <p className="text-xs mt-1.5" style={{ color: "#9CA3AF" }}>
+            Sin verificar por ahora
+          </p>
+        )}
       </div>
 
       {/* Notificaciones */}

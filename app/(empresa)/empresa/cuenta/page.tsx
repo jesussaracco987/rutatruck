@@ -14,6 +14,7 @@ export default async function CuentaEmpresaPage() {
     select: {
       email: true,
       phone: true,
+      telefonoLogin: true,
       emailVerified: true,
       notifZonaLat: true,
       notifZonaLng: true,
@@ -53,6 +54,7 @@ export default async function CuentaEmpresaPage() {
             email={user.email}
             emailVerified={user.emailVerified}
             phone={user.phone}
+            telefonoLogin={user.telefonoLogin}
             notifZonaLat={user.notifZonaLat}
             notifZonaLng={user.notifZonaLng}
             notifRadioKm={user.notifRadioKm}

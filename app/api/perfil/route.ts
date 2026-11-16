@@ -14,6 +14,7 @@ export async function GET() {
       name: true,
       email: true,
       phone: true,
+      telefonoLogin: true,
       emailVerified: true,
       notifZonaLat: true,
       notifZonaLng: true,
