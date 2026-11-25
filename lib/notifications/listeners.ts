@@ -167,6 +167,47 @@ onUnaVez("convocatoria.cerrada", ({ cargaId, titulo, transportistaIds }) => {
   });
 });
 
+onUnaVez("grupo.miembro_sumado", ({ liderId, cargaId, titulo, miembroNombre, camiones }) => {
+  const vehiculos = camiones > 1 ? ` con ${camiones} vehículos` : "";
+  after(async () => {
+    await Promise.allSettled([
+      sendPushToUser(liderId, {
+        title: "Se sumó alguien a tu grupo",
+        body: `${miembroNombre} se sumó${vehiculos} a tu postulación para "${titulo}".`,
+        url: `/transportista/cargas/${cargaId}`,
+      }),
+      notifyTransportista(liderId),
+    ]);
+  });
+});
+
+onUnaVez("grupo.miembro_quitado", ({ miembroId, liderNombre, cargaId, titulo }) => {
+  after(async () => {
+    await Promise.allSettled([
+      sendPushToUser(miembroId, {
+        title: "Ya no estás en el grupo",
+        body: `${liderNombre} te sacó de su grupo para "${titulo}". Si querés, podés postularte por tu cuenta.`,
+        url: `/transportista/cargas/${cargaId}`,
+      }),
+      notifyTransportista(miembroId),
+    ]);
+  });
+});
+
+onUnaVez("grupo.lider_cambiado", ({ nuevoLiderId, miembroIds, cargaId, titulo }) => {
+  after(async () => {
+    await Promise.allSettled([
+      sendPushToUser(nuevoLiderId, {
+        title: "Ahora sos el líder del grupo",
+        body: `El líder anterior quedó afuera de "${titulo}". El chat del grupo sigue con vos.`,
+        url: `/transportista/cargas/${cargaId}`,
+      }),
+      notifyTransportista(nuevoLiderId),
+      ...miembroIds.map((id) => notifyTransportista(id)),
+    ]);
+  });
+});
+
 onUnaVez("postulacion.creada", ({ cargaId, empresaId, titulo }) => {
   after(async () => {
     await Promise.allSettled([

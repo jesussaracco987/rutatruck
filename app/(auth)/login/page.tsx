@@ -7,6 +7,19 @@ import PurgeAuthedCache from "@/app/_components/PurgeAuthedCache";
 import PurgeAuthedPush from "@/app/_components/PurgeAuthedPush";
 import { login } from "@/app/actions/auth";
 
+/**
+ * El registro conserva a dónde volver: quien abre una carga compartida sin
+ * cuenta se registra y cae en esa carga, no en el panel. Con una ruta de
+ * transportista, el formulario ya viene con ese rol marcado.
+ */
+function registroHref(volver: string | string[] | undefined): string {
+  if (typeof volver !== "string") return "/registro";
+  const params = new URLSearchParams({ volver });
+  if (volver.startsWith("/transportista")) params.set("rol", "transportista");
+  else if (volver.startsWith("/empresa")) params.set("rol", "empresa");
+  return `/registro?${params}`;
+}
+
 export default function LoginPage({
   searchParams,
 }: {
@@ -139,7 +152,7 @@ export default function LoginPage({
           <p className="text-sm" style={{ color: "#6B7280" }}>
             ¿No tenés cuenta?{" "}
             <Link
-              href="/registro"
+              href={registroHref(volver)}
               className="font-semibold transition-colors hover:opacity-80"
               style={{ color: "#4ADE80" }}
             >

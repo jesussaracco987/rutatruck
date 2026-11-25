@@ -170,11 +170,20 @@ model Postulacion {
   /// varios camiones cada transportista paga la suya.
   matchConfirmadoEn   DateTime?
   comisionMpPaymentId String?
+  /// Postulación grupal: el transportista se sumó, con el link de invitación,
+  /// a la postulación del líder (esta columna apunta a la del líder). Cada
+  /// miembro sigue teniendo su postulación —paga su comisión y recibe su
+  /// reseña—, pero no tiene chat propio: habla en el hilo del líder, que es el
+  /// chat grupal con quien publica. Un miembro no puede tener miembros.
+  grupoLiderId       Int?
+  grupoLider         Postulacion?      @relation("GrupoPostulacion", fields: [grupoLiderId], references: [id])
+  miembros           Postulacion[]     @relation("GrupoPostulacion")
   carga              Carga             @relation(fields: [cargaId], references: [id])
   transportista      User              @relation(fields: [transportistaId], references: [id])
   mensajes           Mensaje[]
 
   @@unique([cargaId, transportistaId])
+  @@index([grupoLiderId])
 }
 
 /// Reseña bilateral de un viaje finalizado. Los puntajes son 1..5 y solo se

@@ -14,7 +14,7 @@ export async function findUserContacto(userId: string) {
 export async function findUserEmailVerified(userId: string) {
   return db.user.findUnique({
     where: { id: userId },
-    select: { emailVerified: true },
+    select: { emailVerified: true, role: true, esFlota: true, name: true },
   });
 }
 

@@ -35,6 +35,8 @@ export function chatPrevioHabilitado(): boolean {
 type PostulacionChat = {
   estado: string;
   matchConfirmadoEn: Date | null;
+  /** Miembro de una postulación grupal: no tiene hilo propio (habla en el del líder). */
+  grupoLiderId?: number | null;
   carga: { estado: string };
 };
 
@@ -44,6 +46,7 @@ type PostulacionChat = {
  * elegido no sigue escribiendo.
  */
 export function puedeChatear(postulacion: PostulacionChat): boolean {
+  if (postulacion.grupoLiderId != null) return false;
   if (postulacion.estado === "ACEPTADA") return esMatchConfirmado(postulacion);
   return (
     chatPrevioHabilitado() &&
@@ -55,10 +58,19 @@ export function puedeChatear(postulacion: PostulacionChat): boolean {
 /** Cláusula Prisma sobre Postulacion equivalente a puedeChatear. Mezclar vía AND. */
 export function wherePuedeChatear() {
   const conMatch = { estado: "ACEPTADA" as const, ...whereMatchConfirmado() };
-  if (!chatPrevioHabilitado()) return conMatch;
+  if (!chatPrevioHabilitado()) return { grupoLiderId: null, ...conMatch };
   return {
+    grupoLiderId: null,
     OR: [conMatch, { estado: "PENDIENTE" as const, carga: { estado: "ACTIVA" as const } }],
   };
+}
+
+/**
+ * Quién entra al chat grupal (el hilo del líder) además del líder: los
+ * miembros aceptados con su match confirmado, igual que un hilo común.
+ */
+export function whereMiembroConChat(transportistaId: string) {
+  return { transportistaId, estado: "ACEPTADA" as const, ...whereMatchConfirmado() };
 }
 
 /** Si el hilo es una consulta previa (todavía sin elegir) y no el chat del viaje. */

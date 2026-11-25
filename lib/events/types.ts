@@ -49,6 +49,28 @@ export type Events = {
     titulo: string;
     transportistaIds: string[];
   };
+  /** Alguien se sumó con el link de invitación a la postulación grupal de este líder. */
+  "grupo.miembro_sumado": {
+    liderId: string;
+    cargaId: number;
+    titulo: string;
+    miembroNombre: string;
+    camiones: number;
+  };
+  /** El líder sacó a este transportista de su grupo (su postulación se borró). */
+  "grupo.miembro_quitado": {
+    miembroId: string;
+    liderNombre: string;
+    cargaId: number;
+    titulo: string;
+  };
+  /** El líder del grupo quedó afuera y el grupo (con su chat) pasó a otro miembro. */
+  "grupo.lider_cambiado": {
+    nuevoLiderId: string;
+    miembroIds: string[];
+    cargaId: number;
+    titulo: string;
+  };
   "postulacion.creada": {
     cargaId: number;
     empresaId: string;

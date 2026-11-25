@@ -67,7 +67,8 @@ export async function signup(
   });
   if (!result.ok) return { error: result.error };
 
-  redirect(dashboardByRole[role]);
+  // Quien llegó por un link (por ejemplo, una carga compartida) vuelve ahí.
+  redirect(destinoTrasLogin(formData.get("volver"), role) ?? dashboardByRole[role]);
 }
 
 export async function login(

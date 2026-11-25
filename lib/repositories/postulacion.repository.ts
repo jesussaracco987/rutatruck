@@ -84,6 +84,58 @@ export async function findPostulacionesAceptadas(cargaId: number) {
   });
 }
 
+/** Las postulaciones pendientes de la carga entre `ids` (las que ya no lo están no vuelven). */
+export async function findPostulacionesPendientes(ids: number[], cargaId: number) {
+  return db.postulacion.findMany({
+    where: { id: { in: ids }, cargaId, estado: "PENDIENTE" },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, transportistaId: true, camionesCubiertos: true },
+  });
+}
+
+/** La postulación a la que apunta un link de invitación a un grupo. */
+export async function findPostulacionLider(postulacionId: number) {
+  return db.postulacion.findUnique({
+    where: { id: postulacionId },
+    select: { id: true, cargaId: true, transportistaId: true, estado: true, grupoLiderId: true },
+  });
+}
+
+/** Postulación de un miembro con su líder y la carga, para sacarlo del grupo. */
+export async function findMiembroDeGrupo(postulacionId: number) {
+  return db.postulacion.findUnique({
+    where: { id: postulacionId },
+    select: {
+      id: true,
+      estado: true,
+      transportistaId: true,
+      grupoLider: { select: { id: true, transportistaId: true, transportista: { select: { name: true } } } },
+      carga: { select: { id: true, titulo: true } },
+    },
+  });
+}
+
+/**
+ * Borra la postulación del miembro si sigue pendiente y en ese grupo. El
+ * filtro va en el delete para que no se cuele un "aceptar" de quien publica
+ * que llegue al mismo tiempo. Devuelve si la borró.
+ */
+export async function borrarMiembroPendiente(postulacionId: number, grupoLiderId: number) {
+  const { count } = await db.postulacion.deleteMany({
+    where: { id: postulacionId, grupoLiderId, estado: "PENDIENTE" },
+  });
+  return count === 1;
+}
+
+/** Camiones ya cubiertos por las postulaciones aceptadas de la carga. */
+export async function sumarCamionesAceptados(cargaId: number): Promise<number> {
+  const { _sum } = await db.postulacion.aggregate({
+    where: { cargaId, estado: "ACEPTADA" },
+    _sum: { camionesCubiertos: true },
+  });
+  return _sum.camionesCubiertos ?? 0;
+}
+
 export async function crearPostulacion(data: Prisma.PostulacionUncheckedCreateInput) {
   return db.postulacion.create({ data });
 }

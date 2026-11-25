@@ -1,9 +1,26 @@
 import { db } from "@/lib/db";
 import { esChatVigente, whereChatVigente, labelChatPorVencer, CHAT_RETENCION_FINALIZADA_MS } from "@/lib/chat";
-import { puedeChatear, wherePuedeChatear } from "@/lib/match";
+import { puedeChatear, wherePuedeChatear, whereMatchConfirmado, whereMiembroConChat } from "@/lib/match";
 
 // El chat se abre con el match confirmado o, mientras no se cobra comisión,
 // desde la postulación (consulta previa). La regla vive en lib/match.ts.
+
+/** La carga de quien publica con sus transportistas aceptados, para el mensaje a todos. */
+export async function findCargaConAceptadosParaDifusion(cargaId: number, empresaId: string) {
+  return db.carga.findUnique({
+    where: { id: cargaId, empresaId },
+    select: {
+      titulo: true,
+      estado: true,
+      finalizadaEn: true,
+      empresa: { select: { name: true } },
+      postulaciones: {
+        where: { estado: "ACEPTADA" },
+        select: { id: true, transportistaId: true, estado: true, matchConfirmadoEn: true, grupoLiderId: true },
+      },
+    },
+  });
+}
 
 export async function crearMensaje(postulacionId: number, autorId: string, cuerpo: string) {
   return db.mensaje.create({ data: { postulacionId, autorId, cuerpo } });
@@ -47,11 +64,18 @@ export async function countMensajesNoLeidos(userId: string, role: "empresa" | "t
       postulacion: {
         AND: [
           wherePuedeChatear(),
-          role === "empresa" ? { carga: { empresaId: userId } } : { transportistaId: userId },
+          role === "empresa" ? { carga: { empresaId: userId } } : whereHiloDeTransportista(userId),
         ],
       },
     },
   });
+}
+
+/** Hilos donde escribe un transportista: los suyos y el chat grupal del líder de su grupo. */
+function whereHiloDeTransportista(userId: string) {
+  return {
+    OR: [{ transportistaId: userId }, { miembros: { some: whereMiembroConChat(userId) } }],
+  };
 }
 
 /**
@@ -72,8 +96,15 @@ export async function findPostulacionParaChat(postulacionId: number, userId: str
       id: true,
       estado: true,
       matchConfirmadoEn: true,
+      grupoLiderId: true,
       transportistaId: true,
       transportista: { select: { name: true } },
+      // Postulación grupal: este hilo es el chat del grupo y los miembros
+      // aceptados (con su match) también son parte.
+      miembros: {
+        where: { estado: "ACEPTADA", ...whereMatchConfirmado() },
+        select: { transportistaId: true, transportista: { select: { name: true } } },
+      },
       carga: {
         select: {
           id: true,
@@ -89,7 +120,11 @@ export async function findPostulacionParaChat(postulacionId: number, userId: str
     },
   });
   if (!postulacion) return null;
-  if (postulacion.transportistaId !== userId && postulacion.carga.empresaId !== userId) return null;
+  const esParte =
+    postulacion.transportistaId === userId ||
+    postulacion.carga.empresaId === userId ||
+    postulacion.miembros.some((m) => m.transportistaId === userId);
+  if (!esParte) return null;
   if (!puedeChatear(postulacion)) return null;
   if (!esChatVigente(postulacion.carga)) return null;
   return postulacion;
@@ -143,13 +178,14 @@ export async function findConversaciones(
         wherePuedeChatear(),
         role === "empresa"
           ? { carga: { empresaId: userId, ...whereChatVigente() } }
-          : { transportistaId: userId, carga: whereChatVigente() },
+          : { ...whereHiloDeTransportista(userId), carga: whereChatVigente() },
       ],
     },
     select: {
       id: true,
       estado: true,
       transportista: { select: { name: true } },
+      _count: { select: { miembros: { where: { estado: "ACEPTADA", ...whereMatchConfirmado() } } } },
       carga: {
         select: {
           id: true,
@@ -210,7 +246,12 @@ export async function findConversaciones(
         origen: p.carga.origen,
         destino: p.carga.destino,
         estado: p.carga.estado,
-        contraparteNombre: role === "empresa" ? p.transportista.name : p.carga.empresa.name,
+        contraparteNombre:
+          role === "empresa"
+            ? p._count.miembros > 0
+              ? `Grupo de ${p.transportista.name} (${p._count.miembros + 1})`
+              : p.transportista.name
+            : p.carga.empresa.name,
         ultimoMensaje: ultimo?.cuerpo ?? null,
         ultimoMensajeEn: ultimo?.creadoEn ?? p.carga.updatedAt,
         noLeidos: noLeidosPorHilo.get(p.id) ?? 0,
@@ -241,7 +282,11 @@ export async function esParteDelHilo(postulacionId: number, userId: string) {
     where: {
       id: postulacionId,
       AND: [wherePuedeChatear(), { carga: whereChatVigente() }],
-      OR: [{ transportistaId: userId }, { carga: { empresaId: userId } }],
+      OR: [
+        { transportistaId: userId },
+        { carga: { empresaId: userId } },
+        { miembros: { some: whereMiembroConChat(userId) } },
+      ],
     },
     select: { id: true },
   });

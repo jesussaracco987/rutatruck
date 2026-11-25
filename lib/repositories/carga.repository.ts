@@ -248,7 +248,7 @@ export async function createOfertaPrivada(data: Prisma.CargaUncheckedCreateInput
 export async function findCargaActivaParaPostular(cargaId: number) {
   return db.carga.findUnique({
     where: { id: cargaId, estado: "ACTIVA" },
-    select: { id: true, titulo: true, empresaId: true, fechaCarga: true },
+    select: { id: true, titulo: true, empresaId: true, fechaCarga: true, cantidadCamiones: true },
   });
 }
 
