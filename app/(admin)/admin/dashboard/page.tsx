@@ -124,7 +124,7 @@ export default async function AdminDashboard() {
           style={{ backgroundColor: "#112424", borderColor: solicitudesPendientes > 0 ? "#F59E0B" : "var(--primary-20)" }}
         >
           <h3 className="font-semibold text-white mb-1">
-            Solicitudes de transportistas{solicitudesPendientes > 0 ? ` (${solicitudesPendientes} pendientes)` : ""} →
+            Solicitudes y contraseñas{solicitudesPendientes > 0 ? ` (${solicitudesPendientes} pendientes)` : ""} →
           </h3>
           <p className="text-sm" style={{ color: "#A8C5C5" }}>
             Cuentas pedidas desde &quot;Quiero sumarme&quot; y links de cambio de contraseña pedidos por WhatsApp.
