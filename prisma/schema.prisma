@@ -289,8 +289,14 @@ model ConversacionChat {
   /// Hash del visitante (ver claveVisitante), nunca la IP.
   visitante          String
   userId             String?
-  /// "home" (sin cuenta) o "panel" (empresa con sesión).
+  /// "home" (sin cuenta), "panel" (empresa con sesión) o "whatsapp".
   origen             String
+  /// Solo en las de WhatsApp: el número que escribe (formato 549…), para
+  /// seguir la conversación mensaje a mensaje. Se suelta (null) al empezar otra.
+  telefono           String?
+  /// Solo en las de WhatsApp, después del chat: en qué paso está (ubicaciones,
+  /// confirmar, email, código) y lo que juntó (ver whatsapp-carga.service).
+  whatsapp           Json?
   /// [{ rol, texto, dictado? }]: dictado es lo que transcribió el audio antes de que lo editaran.
   mensajes           Json     @default("[]")
   borradorAsistente  Json?
@@ -309,6 +315,15 @@ model ConversacionChat {
   actualizadaEn      DateTime @updatedAt
 
   @@index([creadaEn])
+  @@index([telefono, creadaEn])
+}
+
+/// Números a los que el bot de WhatsApp no atiende (abuso). Se manejan desde /admin/asistente.
+model NumeroBloqueado {
+  /// Formato 549… (ver normalizarTelefono).
+  telefono String   @id
+  motivo   String?
+  creadoEn DateTime @default(now())
 }
 
 model ConfigApp {

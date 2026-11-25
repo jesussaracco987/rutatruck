@@ -43,24 +43,8 @@ async function fetchSuggestions(query: string): Promise<Suggestion[]> {
   }));
 }
 
-/**
- * Localidad con ese nombre exacto ("Rosario, Santa Fe"). `fetchSuggestions` sirve
- * para ir escribiendo, pero ordena por nombre: su primer resultado para "Rosario"
- * es "Balde del Rosario", en San Juan.
- */
-export async function buscarLocalidadExacta(lugar: string): Promise<Suggestion | null> {
-  const [nombre, provincia] = lugar.split(",").map((p) => p.trim());
-  if (!nombre) return null;
-  const consulta = async (conProvincia: boolean) => {
-    const params = new URLSearchParams({ nombre, exacto: "true", max: "1", campos: "nombre,provincia.nombre,centroide" });
-    if (conProvincia) params.set("provincia", provincia);
-    const res = await fetch(`https://apis.datos.gob.ar/georef/api/localidades?${params}`);
-    if (!res.ok) return null;
-    const [l] = (await res.json()).localidades ?? [];
-    return l ? { label: `${l.nombre}, ${l.provincia.nombre}`, lat: l.centroide.lat, lng: l.centroide.lon } : null;
-  };
-  return (provincia ? await consulta(true) : null) ?? consulta(false);
-}
+// Vive en lib/georef para que también la use el bot de WhatsApp (servidor).
+export { buscarLocalidadExacta } from "@/lib/georef";
 
 export default function LocationAutocomplete({
   id, name, placeholder, required, inputClass, inputStyle, initialValue = "", onValueChange, onLocationSelect,

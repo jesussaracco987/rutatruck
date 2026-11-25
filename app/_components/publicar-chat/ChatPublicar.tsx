@@ -72,6 +72,7 @@ export default function ChatPublicar({
   precioPublicacion,
   cuenta,
   hrefFormulario = "/publicar",
+  inicial,
 }: {
   freeTier: boolean;
   precioPublicacion: number;
@@ -81,11 +82,21 @@ export default function ChatPublicar({
    */
   cuenta?: { nombre: string; telefono: string; email: string };
   hrefFormulario?: string;
+  /**
+   * Conversación hecha por WhatsApp (ver whatsapp-carga.service): arranca en
+   * el resumen, con lo que armó el asistente y el número que escribió.
+   */
+  inicial?: { conversacionId: string; mensajes: MensajeChat[]; borrador: BorradorCarga; telefono: string };
 }) {
-  const ESTADO_KEY = cuenta ? `${ESTADO_KEY_BASE}-panel` : ESTADO_KEY_BASE;
-  const [paso, setPaso] = useState<Paso>("chat");
-  const [mensajes, setMensajes] = useState<MensajeChat[]>([]);
-  const [borrador, setBorrador] = useState<BorradorCarga>(BORRADOR_VACIO);
+  // Cada conversación de WhatsApp guarda su avance aparte: no pisa ni la toma el chat de la home.
+  const ESTADO_KEY = inicial
+    ? `${ESTADO_KEY_BASE}-wa-${inicial.conversacionId}`
+    : cuenta
+      ? `${ESTADO_KEY_BASE}-panel`
+      : ESTADO_KEY_BASE;
+  const [paso, setPaso] = useState<Paso>(inicial ? "resumen" : "chat");
+  const [mensajes, setMensajes] = useState<MensajeChat[]>(inicial?.mensajes ?? []);
+  const [borrador, setBorrador] = useState<BorradorCarga>(inicial?.borrador ?? BORRADOR_VACIO);
   const [texto, setTexto] = useState("");
   const [pendiente, setPendiente] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,12 +107,12 @@ export default function ChatPublicar({
   const [centroMapa, setCentroMapa] = useState<Location | null>(null);
 
   const [nombre, setNombre] = useState(cuenta?.nombre ?? "");
-  const [telefono, setTelefono] = useState(cuenta?.telefono ?? "");
+  const [telefono, setTelefono] = useState(cuenta?.telefono || inicial?.telefono || "");
   const [email, setEmail] = useState(cuenta?.email ?? "");
   const [grabando, setGrabando] = useState(false);
   /** Texto tal como quedó después del último audio: si se envía distinto, la persona lo corrigió. */
   const [dictado, setDictado] = useState<string | null>(null);
-  const [conversacionId, setConversacionId] = useState<string | null>(null);
+  const [conversacionId, setConversacionId] = useState<string | null>(inicial?.conversacionId ?? null);
   const [aceptaTerminos, setAceptaTerminos] = useState(false);
   const [codigo, setCodigo] = useState("");
 

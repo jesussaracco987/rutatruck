@@ -42,16 +42,24 @@ async function registrar(nombre: string, fn: () => Promise<unknown>) {
   }
 }
 
+/** De dónde viene la conversación. Sin `whatsapp`, lo decide la sesión. */
+type Canal = { whatsapp?: { telefono: string } };
+
+const origenDe = (userId: string | null, canal: Canal) =>
+  canal.whatsapp ? "whatsapp" : userId ? "panel" : "home";
+
 /** Después de cada respuesta del asistente. Los mensajes llegan completos en cada pedido. */
-export function registrarTurno(datos: {
-  id: string;
-  visitante: string;
-  userId: string | null;
-  mensajes: MensajeChat[];
-  borrador: BorradorCarga;
-  tokens: number;
-  listo: boolean;
-}) {
+export function registrarTurno(
+  datos: {
+    id: string;
+    visitante: string;
+    userId: string | null;
+    mensajes: MensajeChat[];
+    borrador: BorradorCarga;
+    tokens: number;
+    listo: boolean;
+  } & Canal,
+) {
   const usuario = datos.mensajes.filter((m) => m.rol === "usuario");
   const conAudio = usuario.filter((m) => m.dictado);
   const resumen = {
@@ -72,7 +80,8 @@ export function registrarTurno(datos: {
         id: datos.id,
         visitante: datos.visitante,
         userId: datos.userId,
-        origen: datos.userId ? "panel" : "home",
+        origen: origenDe(datos.userId, datos),
+        telefono: datos.whatsapp?.telefono ?? null,
         tokens: datos.tokens,
         pasoMaximo,
         ...resumen,
@@ -83,13 +92,15 @@ export function registrarTurno(datos: {
 }
 
 /** El asistente no respondió (límite o OpenAI caído): se ofreció el formulario. */
-export function registrarFallo(datos: {
-  id: string;
-  visitante: string;
-  userId: string | null;
-  mensajes: MensajeChat[];
-  motivo: string;
-}) {
+export function registrarFallo(
+  datos: {
+    id: string;
+    visitante: string;
+    userId: string | null;
+    mensajes: MensajeChat[];
+    motivo: string;
+  } & Canal,
+) {
   return registrar("fallo", () =>
     db.conversacionChat.upsert({
       where: { id: datos.id },
@@ -98,7 +109,8 @@ export function registrarFallo(datos: {
         id: datos.id,
         visitante: datos.visitante,
         userId: datos.userId,
-        origen: datos.userId ? "panel" : "home",
+        origen: origenDe(datos.userId, datos),
+        telefono: datos.whatsapp?.telefono ?? null,
         mensajes: datos.mensajes as unknown as Prisma.InputJsonValue,
         fallo: datos.motivo,
       },
