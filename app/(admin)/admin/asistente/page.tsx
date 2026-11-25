@@ -5,6 +5,7 @@ import { sanitizarBorrador, type BorradorCarga, type MensajeChat } from "@/lib/c
 import { DIAS_RETENCION_CONVERSACIONES } from "@/lib/services/conversacion-chat.service";
 import { TIPOS_CARGA } from "@/lib/tipos-carga";
 import { formatFechaDia } from "@/lib/fechas";
+import { bloquearNumeroAction, desbloquearNumeroAction } from "./actions";
 
 const DIAS = 30;
 
@@ -99,7 +100,10 @@ export default async function AdminAsistentePage({
     );
   }
   const { filtro = "todas" } = await searchParams;
-  const filas = await conversacionesRecientes();
+  const [filas, bloqueados] = await Promise.all([
+    conversacionesRecientes(),
+    db.numeroBloqueado.findMany({ orderBy: { creadoEn: "desc" } }),
+  ]);
 
   const total = filas.length;
   const alResumen = filas.filter((f) => PASOS.indexOf(f.pasoMaximo) >= 1);
@@ -217,6 +221,58 @@ export default async function AdminAsistentePage({
           </div>
         </section>
 
+        <section className="rounded-xl border p-4 space-y-3" style={tarjeta}>
+          <div>
+            <h2 className="text-sm font-semibold text-white">Números bloqueados en WhatsApp</h2>
+            <p className="text-xs mt-1" style={suave}>
+              El bot no les contesta. Topes automáticos por número: 30 mensajes por hora, 60 por día y 5 cargas
+              nuevas por día.
+            </p>
+          </div>
+          <form action={bloquearNumeroAction} className="flex flex-wrap gap-2">
+            <input
+              name="telefono"
+              required
+              placeholder="Teléfono (ej. 0351 15 555-1234)"
+              className="flex-1 min-w-48 rounded-lg px-3 py-2 text-sm text-white"
+              style={{ backgroundColor: "#0F2020", border: "1px solid #1E3838" }}
+            />
+            <input
+              name="motivo"
+              placeholder="Motivo (opcional)"
+              className="flex-1 min-w-48 rounded-lg px-3 py-2 text-sm text-white"
+              style={{ backgroundColor: "#0F2020", border: "1px solid #1E3838" }}
+            />
+            <button
+              type="submit"
+              className="rounded-lg px-4 py-2 text-sm font-semibold cursor-pointer"
+              style={{ backgroundColor: ACENTO, color: "#0C1E1E" }}
+            >
+              Bloquear
+            </button>
+          </form>
+          {bloqueados.length === 0 ? (
+            <p className="text-sm" style={suave}>Ninguno.</p>
+          ) : (
+            <ul className="space-y-1 text-sm">
+              {bloqueados.map((b) => (
+                <li key={b.telefono} className="flex flex-wrap items-center justify-between gap-2 text-white">
+                  <span>
+                    +{b.telefono}
+                    {b.motivo && <span style={suave}> · {b.motivo}</span>}
+                  </span>
+                  <form action={desbloquearNumeroAction}>
+                    <input type="hidden" name="telefono" value={b.telefono} />
+                    <button type="submit" className="text-xs font-semibold hover:opacity-80 cursor-pointer" style={{ color: ACENTO }}>
+                      Desbloquear
+                    </button>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
         <section className="space-y-3">
           <nav className="flex flex-wrap gap-2" aria-label="Filtrar conversaciones">
             {FILTROS.map((f) => (
@@ -247,7 +303,7 @@ export default async function AdminAsistentePage({
                 <summary className="cursor-pointer list-none p-4">
                   <div className="flex flex-wrap items-center gap-2 text-xs" style={suave}>
                     <span>{f.creadaEn.toLocaleString("es-AR", { timeZone: "America/Argentina/Buenos_Aires", dateStyle: "short", timeStyle: "short" })}</span>
-                    <span>· {f.origen === "panel" ? "Empresa con sesión" : "Visitante"}</span>
+                    <span>· {f.origen === "panel" ? "Empresa con sesión" : f.origen === "whatsapp" ? "WhatsApp" : "Visitante"}</span>
                     <span>· {NOMBRE_PASO[f.pasoMaximo] ?? f.pasoMaximo}</span>
                     {f.camposCorregidos.length > 0 && (
                       <span className="rounded-full bg-amber-500/20 px-2 text-amber-300">
@@ -262,6 +318,22 @@ export default async function AdminAsistentePage({
                 </summary>
 
                 <div className="space-y-4 border-t px-4 pb-4 pt-3" style={{ borderColor: "#1E3838" }}>
+                  {f.origen === "whatsapp" && f.telefono && (
+                    <div className="flex flex-wrap items-center gap-3 text-sm">
+                      <span className="text-white">WhatsApp +{f.telefono}</span>
+                      {bloqueados.some((b) => b.telefono === f.telefono) ? (
+                        <span className="rounded-full bg-red-500/20 px-2 text-xs text-red-300">bloqueado</span>
+                      ) : (
+                        <form action={bloquearNumeroAction}>
+                          <input type="hidden" name="telefono" value={f.telefono} />
+                          <input type="hidden" name="motivo" value="Desde una conversación" />
+                          <button type="submit" className="text-xs font-semibold text-red-300 hover:opacity-80 cursor-pointer">
+                            Bloquear número
+                          </button>
+                        </form>
+                      )}
+                    </div>
+                  )}
                   <div className="flex flex-col gap-2">
                     {mensajes.map((m, i) => (
                       <div key={i} className={m.rol === "usuario" ? "self-end max-w-[85%]" : "self-start max-w-[85%]"}>

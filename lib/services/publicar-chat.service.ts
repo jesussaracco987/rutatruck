@@ -37,6 +37,8 @@ function plantilla(titulo: string, cuerpo: string): string {
 
 export async function enviarCodigoPublicacion(
   email: string,
+  /** "whatsapp": la persona lo responde en el chat del bot, no en la web. */
+  via: "web" | "whatsapp" = "web",
 ): Promise<{ ok: true } | { ok: false; status: number; error: string }> {
   if (!(await isValidEmail(email))) {
     return { ok: false, status: 400, error: "El email ingresado no existe o no es válido" };
@@ -56,7 +58,7 @@ export async function enviarCodigoPublicacion(
       subject: `${codigo} es tu código de ClickCargo`,
       html: plantilla(
         "Tu código para publicar",
-        `<p style="margin:0 0 24px;font-size:14px;color:#9CA3AF;line-height:1.6;">Ingresalo en ClickCargo para publicar tu carga. Vence en <strong style="color:#fff;">15 minutos</strong>.</p>
+        `<p style="margin:0 0 24px;font-size:14px;color:#9CA3AF;line-height:1.6;">${via === "whatsapp" ? "Respondelo en el chat de WhatsApp de ClickCargo" : "Ingresalo en ClickCargo"} para publicar tu carga. Vence en <strong style="color:#fff;">15 minutos</strong>.</p>
          <p style="margin:0 0 28px;font-size:32px;font-weight:800;letter-spacing:8px;color:#2DD4BF;">${codigo}</p>
          <p style="margin:0;font-size:12px;color:#4B5563;line-height:1.5;">Si no fuiste vos, ignorá este email.</p>`,
       ),
@@ -69,8 +71,12 @@ export async function enviarCodigoPublicacion(
   return { ok: true };
 }
 
-/** Valida el código y lo consume: sirve una sola vez, aunque lleguen dos pedidos juntos. */
-async function verificarCodigo(email: string, codigo: string): Promise<string | null> {
+/**
+ * Valida el código y lo consume: sirve una sola vez, aunque lleguen dos pedidos
+ * juntos. Devuelve el error para mostrar, o null si es correcto. También lo usa
+ * el bot de WhatsApp (whatsapp-carga.service).
+ */
+export async function verificarCodigo(email: string, codigo: string): Promise<string | null> {
   const registro = await db.codigoPublicacion.findUnique({ where: { email } });
   if (!registro || registro.expiraEn < new Date()) return "El código expiró. Pedí uno nuevo.";
 

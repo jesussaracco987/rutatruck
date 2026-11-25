@@ -7,21 +7,13 @@ import {
   MAX_LARGO_MENSAJE,
   MAX_MENSAJES,
   MAX_PREGUNTAS,
+  PREGUNTA_POR_CAMPO,
   camposFaltantes,
   sanitizarBorrador,
-  type CampoRequerido,
   type MensajeChat,
 } from "@/lib/chat-carga";
 
 const MENSAJES_POR_HORA = 30;
-
-/** Por si el modelo no pregunta nada y todavía falta un dato obligatorio. */
-const PREGUNTA_POR_CAMPO: Record<CampoRequerido, string> = {
-  origen: "¿Desde dónde sale la carga?",
-  destino: "¿A dónde va?",
-  tipoCarga: "¿Qué tipo de carga es?",
-  fechaCarga: "¿Para qué fecha la necesitás?",
-};
 
 const textoValido = (t: unknown): t is string =>
   typeof t === "string" && t.trim() !== "" && t.length <= MAX_LARGO_MENSAJE;

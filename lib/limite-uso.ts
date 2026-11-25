@@ -25,6 +25,15 @@ export async function consumirLimite(clave: string, max: number, ventanaMs = HOR
 }
 
 /**
+ * Suma un uso y devuelve cuántos van en la ventana. Sirve cuando importa
+ * distinguir el primer pedido que se pasa del máximo (para avisar una sola vez)
+ * de los siguientes.
+ */
+export async function sumarUso(clave: string, ventanaMs = HORA_MS): Promise<number> {
+  return sumar(clave, inicioVentana(ventanaMs), 1);
+}
+
+/**
  * Identifica al visitante sin guardar su IP. En Vercel estos headers los pone
  * la plataforma, así que el cliente no puede falsearlos para esquivar el límite.
  */

@@ -78,6 +78,14 @@ export const MAX_MENSAJES = MAX_PREGUNTAS * 2 + 1;
 const CAMPOS_REQUERIDOS = ["origen", "destino", "tipoCarga", "fechaCarga"] as const;
 export type CampoRequerido = (typeof CAMPOS_REQUERIDOS)[number];
 
+/** Por si el modelo no pregunta nada y todavía falta un dato obligatorio. */
+export const PREGUNTA_POR_CAMPO: Record<CampoRequerido, string> = {
+  origen: "¿Desde dónde sale la carga?",
+  destino: "¿A dónde va?",
+  tipoCarga: "¿Qué tipo de carga es?",
+  fechaCarga: "¿Para qué fecha la necesitás?",
+};
+
 export function camposFaltantes(b: BorradorCarga): CampoRequerido[] {
   return CAMPOS_REQUERIDOS.filter((c) => !b[c]);
 }
