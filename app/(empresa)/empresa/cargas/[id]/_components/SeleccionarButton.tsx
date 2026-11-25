@@ -6,7 +6,8 @@ import Swal from "sweetalert2";
 
 interface Props {
   cargaId: number;
-  postulacionId: number;
+  /** Una postulación, o todas las pendientes de un grupo (se aceptan juntas). */
+  postulacionIds: number[];
   transportistaNombre: string;
   camionesCubiertos: number;
   cantidadCamionesTotal: number;
@@ -14,7 +15,7 @@ interface Props {
 
 export default function SeleccionarButton({
   cargaId,
-  postulacionId,
+  postulacionIds,
   transportistaNombre,
   camionesCubiertos,
   cantidadCamionesTotal,
@@ -50,7 +51,7 @@ export default function SeleccionarButton({
       const res = await fetch(`/api/cargas/${cargaId}/seleccionar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ postulacionId }),
+        body: JSON.stringify({ postulacionIds }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Error al seleccionar");

@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Solo transportistas pueden postularse" }, { status: 403 });
   }
 
-  let body: { cargaId: number; mensaje?: string; contactoEmail?: string; contactoTelefono?: string; camionesCubiertos?: number; precioOfrecido?: number };
+  let body: { cargaId: number; mensaje?: string; contactoEmail?: string; contactoTelefono?: string; camionesCubiertos?: number; precioOfrecido?: number; grupo?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
     contactoTelefono: body.contactoTelefono ?? null,
     camionesCubiertos: Math.max(1, body.camionesCubiertos ?? 1),
     precioOfrecido: body.precioOfrecido ?? null,
+    grupo: body.grupo,
   });
 
   if (!result.ok) {

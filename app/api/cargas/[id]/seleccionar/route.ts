@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/dal";
 import { isEmpresa } from "@/lib/roles";
-import { aceptarPostulacionParaCarga } from "@/lib/services/postulacion.service";
+import { aceptarPostulacionesParaCarga } from "@/lib/services/postulacion.service";
 
 export async function POST(
   req: NextRequest,
@@ -21,17 +21,28 @@ export async function POST(
     return NextResponse.json({ error: "ID inválido" }, { status: 400 });
   }
 
-  let body: { postulacionId: number };
+  // `postulacionId` (una) o `postulacionIds` (aceptar varias a la vez).
+  let body: { postulacionId?: unknown; postulacionIds?: unknown };
   try {
     body = await req.json();
   } catch {
     return NextResponse.json({ error: "Body inválido" }, { status: 400 });
   }
 
-  const result = await aceptarPostulacionParaCarga(cargaId, session.userId, body.postulacionId);
+  const ids = Array.isArray(body.postulacionIds) ? body.postulacionIds : [body.postulacionId];
+  const result = await aceptarPostulacionesParaCarga(
+    cargaId,
+    session.userId,
+    ids.map((id) => Number(id)),
+  );
   if (!result.ok) {
     return NextResponse.json({ error: result.error }, { status: result.status });
   }
 
-  return NextResponse.json({ ok: true, cubiertos: result.cubiertos, necesarios: result.necesarios });
+  return NextResponse.json({
+    ok: true,
+    cubiertos: result.cubiertos,
+    necesarios: result.necesarios,
+    aceptadas: result.aceptadas,
+  });
 }

@@ -7,6 +7,7 @@ import { HamburgerMenu } from "@/app/_components/HamburgerMenu";
 import ChatThread from "@/app/_components/ChatThread";
 import { findPostulacionParaChat, findMensajesDeHilo } from "@/lib/repositories/mensaje.repository";
 import { labelChatPorVencer } from "@/lib/chat";
+import { participantesDelHilo } from "@/lib/services/mensaje.service";
 
 export default async function TransportistaConversacionPage({
   params,
@@ -19,13 +20,19 @@ export default async function TransportistaConversacionPage({
   if (isNaN(postulacionId)) redirect("/transportista/conversaciones");
 
   const postulacion = await findPostulacionParaChat(postulacionId, session.userId);
-  if (!postulacion || postulacion.transportistaId !== session.userId) {
+  // El transportista del hilo, o un miembro de su grupo (chat grupal).
+  const esTransportistaDelHilo =
+    postulacion?.transportistaId === session.userId ||
+    postulacion?.miembros.some((m) => m.transportistaId === session.userId);
+  if (!postulacion || !esTransportistaDelHilo) {
     redirect("/transportista/conversaciones");
   }
 
   const { carga } = postulacion;
   const mensajes = await findMensajesDeHilo(postulacionId);
   const avisoVencimiento = labelChatPorVencer(carga);
+  const participantes = participantesDelHilo(postulacion);
+  const nombres = Object.fromEntries(participantes.map((p) => [p.id, p.nombre]));
 
   return (
     <div className="h-dvh flex flex-col overflow-hidden" style={{ backgroundColor: "#F2F5F5" }}>
@@ -54,7 +61,14 @@ export default async function TransportistaConversacionPage({
           </svg>
         </Link>
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-gray-900 truncate">{carga.empresa.name}</p>
+          <p className="font-semibold text-gray-900 truncate">
+            {carga.empresa.name}
+            {postulacion.miembros.length > 0 && (
+              <span className="font-normal" style={{ color: "#6B7280" }}>
+                {" "}· grupo de {postulacion.transportista.name} ({postulacion.miembros.length + 1})
+              </span>
+            )}
+          </p>
           <Link
             href={`/transportista/cargas/${carga.id}`}
             className="text-xs truncate block transition-opacity hover:opacity-80"
@@ -81,6 +95,7 @@ export default async function TransportistaConversacionPage({
         key={postulacion.id}
         postulacionId={postulacion.id}
         currentUserId={session.userId}
+        nombres={nombres}
         initialMensajes={mensajes.map((m) => ({
           id: m.id,
           autorId: m.autorId,

@@ -16,9 +16,15 @@ interface Props {
   postulacionId: number;
   currentUserId: string;
   initialMensajes: Mensaje[];
+  /**
+   * Chat grupal (postulación grupal): nombre de cada participante por id, para
+   * mostrar quién escribió cada mensaje. En un hilo de a dos no hace falta.
+   */
+  nombres?: Record<string, string>;
 }
 
-export default function ChatThread({ postulacionId, currentUserId, initialMensajes }: Props) {
+export default function ChatThread({ postulacionId, currentUserId, initialMensajes, nombres }: Props) {
+  const esGrupal = nombres !== undefined && Object.keys(nombres).length > 2;
   const router = useRouter();
   const [mensajes, setMensajes] = useState<Mensaje[]>(initialMensajes);
   const [texto, setTexto] = useState("");
@@ -196,6 +202,11 @@ export default function ChatThread({ postulacionId, currentUserId, initialMensaj
                     : { backgroundColor: "#FFFFFF", color: "#111827", border: "1px solid #E2E8E8" }
                 }
               >
+                {esGrupal && !esMio && (
+                  <p className="text-xs font-semibold mb-0.5" style={{ color: "var(--primary)" }}>
+                    {nombres[m.autorId] ?? "Ex participante"}
+                  </p>
+                )}
                 <p className="whitespace-pre-wrap break-words">{m.cuerpo}</p>
                 <p className="text-[10px] mt-1 flex items-center justify-end gap-1" style={{ opacity: 0.7 }}>
                   {new Date(m.creadoEn).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}

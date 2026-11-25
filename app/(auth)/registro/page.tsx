@@ -15,10 +15,11 @@ import { ultimoDiaFreeTier } from "@/lib/free-tier";
 export default function RegistroPage({
   searchParams,
 }: {
-  searchParams: Promise<{ rol?: string | string[] }>;
+  searchParams: Promise<{ rol?: string | string[]; volver?: string | string[] }>;
 }) {
   // La home y las landings mandan acá con ?rol=empresa o ?rol=transportista.
-  const { rol } = use(searchParams);
+  // El login agrega ?volver= cuando la persona venía de un link (signup lo valida).
+  const { rol, volver } = use(searchParams);
   const [state, action, pending] = useActionState<FormState, FormData>(signup, undefined);
   const [showPassword, setShowPassword] = useState(false);
   const [esEmpresa, setEsEmpresa] = useState(rol === "empresa");
@@ -73,6 +74,7 @@ export default function RegistroPage({
         </p>
 
         <form action={action} onFocus={alEmpezar} className="space-y-4">
+          {typeof volver === "string" && <input type="hidden" name="volver" value={volver} />}
           <div>
             <label htmlFor="name" className="block text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "#9CA3AF" }}>
               Nombre o razón social

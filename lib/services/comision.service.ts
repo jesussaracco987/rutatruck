@@ -11,6 +11,7 @@ import {
   confirmarMatchPorPago,
   findPostulacionesAceptadas,
 } from "@/lib/repositories/postulacion.repository";
+import { traspasarGruposSinLider } from "@/lib/services/grupo.service";
 
 /**
  * Ronda de cobro de una carga. La comisión se cobra por postulación: cuando la
@@ -35,6 +36,8 @@ export async function iniciarRondaPago(
       cargaId,
       aceptadas.map((p) => p.transportistaId),
     );
+    // Los pendientes quedan RECHAZADA: si entre ellos había un líder, su grupo pasa a otro.
+    await traspasarGruposSinLider(cargaId);
     return "asignada";
   }
 
@@ -73,11 +76,14 @@ export async function resolverRondaPago(cargaId: number) {
 
   if (pagadas.length === aceptadas.length) {
     await cerrarRondaPago(cargaId, aceptadas.map((p) => p.transportistaId));
+    await traspasarGruposSinLider(cargaId);
     return;
   }
 
   if (carga.transportistaPagoDeadline && carga.transportistaPagoDeadline < new Date()) {
     await expirarRondaPago(cargaId, pagadas[0]?.transportistaId ?? null);
+    // Caso típico: el líder no pagó y los demás del grupo sí.
+    await traspasarGruposSinLider(cargaId);
   }
 }
 

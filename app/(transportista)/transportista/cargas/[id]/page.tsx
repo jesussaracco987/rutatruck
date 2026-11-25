@@ -8,6 +8,7 @@ import NotificacionBell from "../../_components/NotificacionBell";
 import { HamburgerMenu } from "@/app/_components/HamburgerMenu";
 import { isFlota } from "@/lib/roles";
 import PostularseButton from "./_components/PostularseButton";
+import QuitarMiembroButton from "./_components/QuitarMiembroButton";
 import CompletarViajeButton from "./_components/CompletarViajeButton";
 import AbrirDisputaTransportistaButton from "./_components/AbrirDisputaTransportistaButton";
 import PagarComisionButton from "./_components/PagarComisionButton";
@@ -18,6 +19,10 @@ import { resolverRondaPago } from "@/lib/services/comision.service";
 import RatingChip from "@/app/_components/RatingChip";
 import ResenaForm from "@/app/_components/ResenaForm";
 import { findResenasEscritasEnCarga } from "@/lib/repositories/resena.repository";
+import { sumarCamionesAceptados } from "@/lib/repositories/postulacion.repository";
+import CompartirCargaButton from "@/app/_components/CompartirCargaButton";
+import { rutaCargaParaTransportistas, textoCompartirCarga } from "@/lib/compartir-carga";
+import { leerInvitacionGrupo, rutaInvitacionGrupo } from "@/lib/grupo-postulacion";
 import { esMatchConfirmado, puedeChatear, chatPrevioHabilitado } from "@/lib/match";
 import { TIPO_CARGA_LABELS as TIPO_LABELS } from "@/lib/tipos-carga";
 
@@ -26,11 +31,11 @@ export default async function CargaPublicaPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ error?: string; pago?: string }>;
+  searchParams: Promise<{ error?: string; pago?: string; grupo?: string }>;
 }) {
   const session = await verifySession();
   const { id } = await params;
-  const { error, pago } = await searchParams;
+  const { error, pago, grupo } = await searchParams;
 
   const cargaId = parseInt(id);
   if (isNaN(cargaId)) redirect("/transportista/cargas");
@@ -46,6 +51,16 @@ export default async function CargaPublicaPage({
     }),
     db.postulacion.findUnique({
       where: { cargaId_transportistaId: { cargaId, transportistaId: session.userId } },
+      include: {
+        // Postulación grupal: el líder (si soy miembro) o mis miembros (si soy el líder).
+        grupoLider: {
+          select: { id: true, estado: true, matchConfirmadoEn: true, transportista: { select: { name: true } } },
+        },
+        miembros: {
+          orderBy: { createdAt: "asc" },
+          select: { id: true, estado: true, camionesCubiertos: true, transportista: { select: { name: true } } },
+        },
+      },
     }),
     db.user.findUnique({
       where: { id: session.userId },
@@ -87,6 +102,32 @@ export default async function CargaPublicaPage({
     (await findResenasEscritasEnCarga(cargaId, session.userId)).some(
       (r) => r.destinatarioId === carga.empresaId,
     );
+
+  // Postulación grupal. Invitado: llegó con ?grupo= y todavía no se postuló.
+  const liderInvitacionId = !miPostulacion && grupo ? leerInvitacionGrupo(grupo) : null;
+  const invitacion = liderInvitacionId
+    ? await db.postulacion.findFirst({
+        where: { id: liderInvitacionId, cargaId, grupoLiderId: null, estado: { not: "RECHAZADA" } },
+        select: { transportista: { select: { name: true } } },
+      })
+    : null;
+  // Líder: puede invitar mientras la carga busque camiones y él no sea miembro de otro grupo.
+  const puedeInvitar =
+    !!miPostulacion &&
+    miPostulacion.grupoLiderId === null &&
+    miPostulacion.estado !== "RECHAZADA" &&
+    carga.estado === "ACTIVA" &&
+    !carga.esPrivada &&
+    carga.cantidadCamiones > 1;
+  // Miembro: el chat es el del líder, cuando los dos tienen el match confirmado.
+  const lider = miPostulacion?.grupoLider ?? null;
+  const chatGrupalId =
+    lider &&
+    miPostulacion?.estado === "ACEPTADA" &&
+    esMatchConfirmado(miPostulacion) &&
+    puedeChatear({ ...lider, carga })
+      ? lider.id
+      : null;
 
   let montoComision = 0;
   if (pendePago) {
@@ -266,9 +307,9 @@ export default async function CargaPublicaPage({
           </div>
         </div>
 
-        {miPostulacion && puedeChatear({ ...miPostulacion, carga }) && (
+        {miPostulacion && (chatGrupalId || puedeChatear({ ...miPostulacion, carga })) && (
           <Link
-            href={`/transportista/conversaciones/${miPostulacion.id}`}
+            href={`/transportista/conversaciones/${chatGrupalId ?? miPostulacion.id}`}
             className="rounded-xl border p-6 mb-6 flex items-center gap-4 transition-colors hover:border-[var(--primary-27)]"
             style={{ backgroundColor: "var(--primary-5)", borderColor: "var(--primary-20)" }}
           >
@@ -282,7 +323,11 @@ export default async function CargaPublicaPage({
             </span>
             <div className="flex-1 min-w-0">
               <p className="font-medium" style={{ color: "var(--primary)" }}>
-                {soyAceptado ? `Chat con ${carga.contactoNombre}` : `Consultale a ${carga.contactoNombre}`}
+                {chatGrupalId || miPostulacion.miembros.some((m) => m.estado === "ACEPTADA")
+                  ? `Chat del grupo con ${carga.contactoNombre}`
+                  : soyAceptado
+                    ? `Chat con ${carga.contactoNombre}`
+                    : `Consultale a ${carga.contactoNombre}`}
               </p>
               <p className="text-sm mt-0.5" style={{ color: "#374151" }}>
                 {soyAceptado
@@ -361,16 +406,73 @@ export default async function CargaPublicaPage({
           </div>
         )}
 
+        {/* Miembro de una postulación grupal. */}
+        {lider && (
+          <div
+            className="rounded-xl border px-4 py-3 mb-4 text-sm"
+            style={{ backgroundColor: "#E0F2FE", borderColor: "#BAE6FD", color: "#075985" }}
+          >
+            Sos parte del grupo de <strong>{lider.transportista.name}</strong>. Quien publica acepta al grupo y
+            coordinan todos juntos en el chat del grupo.
+          </div>
+        )}
+
+        {/* Líder: invita a otros a sumarse a su postulación con un link. */}
+        {puedeInvitar && (
+          <div className="rounded-xl border p-5 mb-4" style={{ backgroundColor: "#FFFFFF", borderColor: "var(--primary-20)" }}>
+            <h2 className="font-medium text-gray-900">Armá tu grupo</h2>
+            <p className="text-sm mt-1 mb-3" style={{ color: "#6B7280" }}>
+              Mandale este link a otros transportistas: se suman a tu postulación y quien publica los acepta a todos
+              juntos. Cada uno paga su comisión y coordinan en un mismo chat.
+            </p>
+            <CompartirCargaButton
+              ruta={rutaInvitacionGrupo(carga.id, miPostulacion.id)}
+              texto={`Sumate a mi grupo para esta carga. ${textoCompartirCarga(carga)}`}
+              etiqueta="Invitar a mi grupo"
+            />
+            {miPostulacion.miembros.length > 0 && (
+              <ul className="mt-4 space-y-1 text-sm">
+                {miPostulacion.miembros.map((m) => (
+                  <li key={m.id} className="flex justify-between gap-2">
+                    <span className="text-gray-900">{m.transportista.name}</span>
+                    <span className="flex items-center gap-3" style={{ color: "#6B7280" }}>
+                      <span>
+                        {m.camionesCubiertos > 1 ? `${m.camionesCubiertos} vehículos · ` : ""}
+                        {m.estado === "ACEPTADA" ? "aceptado" : m.estado === "RECHAZADA" ? "no seleccionado" : "pendiente"}
+                      </span>
+                      {/* Solo pendientes: el aceptado ya es parte de lo que eligió quien publica. */}
+                      {m.estado === "PENDIENTE" && <QuitarMiembroButton postulacionId={m.id} nombre={m.transportista.name} />}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        {/* Convocatorias grandes: que la pase a otros transportistas que conozca. */}
+        {carga.estado === "ACTIVA" && !carga.esPrivada && !puedeInvitar && (
+          <div className="mb-4">
+            <p className="text-xs mb-2" style={{ color: "#6B7280" }}>
+              {carga.cantidadCamiones > 1
+                ? "¿Conocés a otros transportistas? Pasales esta carga para que se postulen."
+                : "¿Conocés a alguien a quien le sirva? Pasale esta carga."}
+            </p>
+            <CompartirCargaButton ruta={rutaCargaParaTransportistas(carga.id)} texto={textoCompartirCarga(carga)} />
+          </div>
+        )}
+
         {!soyAsignado && (
           <PostularseButton
             cargaId={carga.id}
             miPostulacion={miPostulacion}
             contactoDefecto={{ email: user?.email ?? "", telefono: user?.phone ?? "" }}
-            cantidadCamiones={carga.cantidadCamiones ?? 1}
+            cantidadCamiones={Math.max(1, (carga.cantidadCamiones ?? 1) - (await sumarCamionesAceptados(carga.id)))}
             esFlota={isFlota(session.role, session.esFlota)}
             pesoUnidad={carga.pesoUnidad}
             emailVerified={user?.emailVerified ?? true}
-            chatPrevio={chatPrevioHabilitado() && carga.estado === "ACTIVA"}
+            chatPrevio={chatPrevioHabilitado() && carga.estado === "ACTIVA" && !lider}
+            grupo={invitacion && grupo ? { token: grupo, liderNombre: invitacion.transportista.name } : undefined}
           />
         )}
       </main>

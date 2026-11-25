@@ -13,6 +13,10 @@ import ReintentarPagoButton from "./_components/ReintentarPagoButton";
 import CancelarCargaButton from "./_components/CancelarCargaButton";
 import ReactivarCargaButton from "./_components/ReactivarCargaButton";
 import RepetirCargaButton from "./_components/RepetirCargaButton";
+import AceptarVariasPanel from "./_components/AceptarVariasPanel";
+import MensajeATodosForm from "./_components/MensajeATodosForm";
+import CompartirCargaButton from "@/app/_components/CompartirCargaButton";
+import { rutaCargaParaTransportistas, textoCompartirCarga } from "@/lib/compartir-carga";
 import NotificacionBellEmpresa from "../../_components/NotificacionBellEmpresa";
 import { HamburgerMenu } from "@/app/_components/HamburgerMenu";
 import { AutoRefresh } from "@/app/_components/AutoRefresh";
@@ -119,9 +123,43 @@ export default async function CargaDetallePage({
       emailVerified: p.transportista.emailVerified,
       ratingPromedio: p.transportista.ratingPromedio,
       ratingCantidad: p.transportista.ratingCantidad,
+      // Miembro de un grupo: no tiene chat propio, habla en el del líder.
+      esMiembro: p.grupoLiderId !== null,
       };
     });
   const sinPagar = asignados.filter((t) => !t.confirmado);
+
+  // Postulaciones grupales: miembros de cada líder, en orden de llegada.
+  const miembrosDe = new Map<number, typeof carga.postulaciones>();
+  for (const p of carga.postulaciones) {
+    if (p.grupoLiderId === null) continue;
+    miembrosDe.set(p.grupoLiderId, [...(miembrosDe.get(p.grupoLiderId) ?? []), p]);
+  }
+  const miembrosAceptados = (liderId: number) =>
+    (miembrosDe.get(liderId) ?? []).filter((m) => m.estado === "ACEPTADA" && esMatchConfirmado(m)).length;
+
+  // Hilos con chat habilitado (uno por grupo): los que reciben el "mensaje a todos".
+  const conChat = asignados.filter((t) => t.confirmado && !t.esMiembro);
+
+  // Para aceptar varias a la vez (convocatorias de muchos camiones). Un grupo
+  // es una sola opción: se acepta con todos sus pendientes.
+  const pendientes = carga.postulaciones
+    .filter((p) => p.grupoLiderId === null)
+    .map((p) => {
+      const grupo = [p, ...(miembrosDe.get(p.id) ?? [])].filter((x) => x.estado === "PENDIENTE");
+      return {
+        id: p.id,
+        ids: grupo.map((x) => x.id),
+        nombre: grupo.length > 1 || (miembrosDe.get(p.id)?.length ?? 0) > 0
+          ? `Grupo de ${p.transportista.name} (${grupo.length} pendientes)`
+          : p.transportista.name,
+        camiones: grupo.reduce((s, x) => s + (x.camionesCubiertos ?? 1), 0),
+        rating: p.transportista.ratingCantidad > 0 ? p.transportista.ratingPromedio : null,
+        verificado: p.transportista.emailVerified,
+      };
+    })
+    .filter((u) => u.ids.length > 0);
+  const faltan = carga.cantidadCamiones - asignados.reduce((s, t) => s + t.camionesCubiertos, 0);
 
   // Consulta previa por chat con cada postulante (ver lib/match.ts).
   const chatPrevio = chatPrevioHabilitado() && carga.estado === "ACTIVA";
@@ -410,8 +448,9 @@ export default async function CargaDetallePage({
               </div>
             ))}
             {/* Un hilo por transportista: en una convocatoria de varios camiones
-                cada uno tiene su conversación aparte con la empresa. */}
-            {asignados.filter((t) => t.confirmado).map((t) => (
+                cada uno tiene su conversación aparte con la empresa. Un grupo
+                tiene un solo hilo, el del líder, donde están todos. */}
+            {conChat.map((t) => (
               <Link
                 key={t.postulacionId}
                 href={`/empresa/conversaciones/${t.postulacionId}`}
@@ -428,7 +467,9 @@ export default async function CargaDetallePage({
                 </span>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate" style={{ color: "var(--primary)" }}>
-                    Chat con {t.name}
+                    {miembrosAceptados(t.postulacionId) > 0
+                      ? `Chat del grupo de ${t.name} (${miembrosAceptados(t.postulacionId) + 1})`
+                      : `Chat con ${t.name}`}
                   </p>
                   <p className="text-sm mt-0.5" style={{ color: "#374151" }}>
                     Coordiná los detalles del viaje desde la app
@@ -439,6 +480,7 @@ export default async function CargaDetallePage({
                 </svg>
               </Link>
             ))}
+            {conChat.length >= 2 && <MensajeATodosForm cargaId={carga.id} cantidad={conChat.length} />}
           </div>
         )}
 
@@ -483,6 +525,19 @@ export default async function CargaDetallePage({
             )}
           </div>
 
+          {carga.estado === "ACTIVA" && !carga.esPrivada && (
+            <div className="mb-4">
+              <p className="text-xs mb-2" style={{ color: "#6B7280" }}>
+                Compartila en tus grupos o con transportistas que conozcas: se postulan desde el link.
+              </p>
+              <CompartirCargaButton ruta={rutaCargaParaTransportistas(carga.id)} texto={textoCompartirCarga(carga)} />
+            </div>
+          )}
+
+          {carga.estado === "ACTIVA" && carga.cantidadCamiones > 1 && pendientes.length >= 2 && faltan > 0 && (
+            <AceptarVariasPanel cargaId={carga.id} pendientes={pendientes} faltan={faltan} />
+          )}
+
           {viajesDePaso > 0 && (
             <div
               className="rounded-xl border px-4 py-3 mb-4 flex items-start gap-3"
@@ -509,7 +564,11 @@ export default async function CargaDetallePage({
             </p>
           ) : (
             <div className="space-y-3">
-              {carga.postulaciones.map((p: any) => (
+              {/* Los miembros de un grupo se muestran dentro de la tarjeta de su líder. */}
+              {carga.postulaciones.filter((p) => p.grupoLiderId === null).map((p: any) => {
+                const miembros = miembrosDe.get(p.id) ?? [];
+                const pendientesUnidad = [p, ...miembros].filter((x) => x.estado === "PENDIENTE");
+                return (
                 <div
                   key={p.id}
                   className={`rounded-xl border p-4 ${p.estado === "RECHAZADA" ? "opacity-50" : ""}`}
@@ -536,6 +595,11 @@ export default async function CargaDetallePage({
                           {p.camionesCubiertos > 1 && (
                             <span className="text-xs font-medium px-2 py-0.5 rounded-full" style={{ backgroundColor: "#E0F2FE", color: "#0369A1" }}>
                               {p.camionesCubiertos} vehículos
+                            </span>
+                          )}
+                          {miembros.length > 0 && (
+                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: "#EDE9FE", color: "#6D28D9" }}>
+                              Grupo de {miembros.length + 1} · {[p, ...miembros].reduce((s, x) => s + (x.camionesCubiertos ?? 1), 0)} vehículos
                             </span>
                           )}
                           {p.precioOfrecido != null && (
@@ -575,6 +639,25 @@ export default async function CargaDetallePage({
                         )}
                       </div>
                     </div>
+                    {miembros.length > 0 && (
+                      <ul className="rounded-lg border divide-y text-sm" style={{ borderColor: "#E2E8E8", backgroundColor: "#FFFFFF" }}>
+                        {miembros.map((m) => (
+                          <li key={m.id} className="flex items-center justify-between gap-2 px-3 py-2">
+                            <span className="flex items-center gap-2 min-w-0">
+                              <Link href={`/perfil/${m.transportista.id}`} className="truncate text-gray-900 underline decoration-dotted underline-offset-4 hover:opacity-70">
+                                {m.transportista.name}
+                              </Link>
+                              <RatingChip promedio={m.transportista.ratingPromedio} cantidad={m.transportista.ratingCantidad} />
+                              <BadgeVerificado verificado={m.transportista.emailVerified} />
+                            </span>
+                            <span className="flex-shrink-0 text-xs" style={{ color: "#6B7280" }}>
+                              {(m.camionesCubiertos ?? 1) > 1 ? `${m.camionesCubiertos} vehículos · ` : ""}
+                              {m.estado === "ACEPTADA" ? "aceptado" : m.estado === "RECHAZADA" ? "no seleccionado" : "pendiente"}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                     {chatPrevio && p.estado === "PENDIENTE" && (
                       <Link
                         href={`/empresa/conversaciones/${p.id}`}
@@ -587,18 +670,20 @@ export default async function CargaDetallePage({
                         Chatear con {p.transportista.name.split(" ")[0]}
                       </Link>
                     )}
-                    {p.estado === "PENDIENTE" && carga.estado === "ACTIVA" && (
+                    {/* Un grupo se acepta entero: el líder y los miembros que estén pendientes. */}
+                    {pendientesUnidad.length > 0 && carga.estado === "ACTIVA" && (
                       <SeleccionarButton
                         cargaId={carga.id}
-                        postulacionId={p.id}
-                        transportistaNombre={p.transportista.name}
-                        camionesCubiertos={p.camionesCubiertos ?? 1}
+                        postulacionIds={pendientesUnidad.map((x) => x.id)}
+                        transportistaNombre={miembros.length > 0 ? `el grupo de ${p.transportista.name}` : p.transportista.name}
+                        camionesCubiertos={pendientesUnidad.reduce((s, x) => s + (x.camionesCubiertos ?? 1), 0)}
                         cantidadCamionesTotal={carga.cantidadCamiones}
                       />
                     )}
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

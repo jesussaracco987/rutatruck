@@ -8,15 +8,18 @@ interface Props {
   cargaId: number;
   miPostulacion: { id: number; estado: string; mensaje: string | null } | null;
   contactoDefecto: { email: string; telefono: string };
+  /** Vehículos que le faltan a la convocatoria: es el máximo que puede ofrecer una flota. */
   cantidadCamiones?: number;
   esFlota?: boolean;
   pesoUnidad?: string | null;
   emailVerified?: boolean;
   /** Mientras no hay comisión, postularse abre el chat con el cliente (ver lib/match.ts). */
   chatPrevio?: boolean;
+  /** Llegó con el link de invitación de un grupo: se suma a la postulación de ese líder. */
+  grupo?: { token: string; liderNombre: string };
 }
 
-export default function PostularseButton({ cargaId, miPostulacion, contactoDefecto, cantidadCamiones = 1, esFlota = false, pesoUnidad, emailVerified = true, chatPrevio = false }: Props) {
+export default function PostularseButton({ cargaId, miPostulacion, contactoDefecto, cantidadCamiones = 1, esFlota = false, pesoUnidad, emailVerified = true, chatPrevio = false, grupo }: Props) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -90,6 +93,7 @@ export default function PostularseButton({ cargaId, miPostulacion, contactoDefec
           contactoTelefono,
           camionesCubiertos: esFlota ? Math.max(1, parseInt(camionesCubiertos) || 1) : 1,
           precioOfrecido: precioOfrecido ? parseFloat(precioOfrecido) : undefined,
+          grupo: grupo?.token,
         }),
       });
       const data = await res.json();
@@ -124,9 +128,13 @@ export default function PostularseButton({ cargaId, miPostulacion, contactoDefec
       className="rounded-xl border p-6"
       style={{ backgroundColor: "#FFFFFF", borderColor: "#E2E8E8" }}
     >
-      <h2 className="font-medium text-gray-900 mb-1">Postularme a esta carga</h2>
+      <h2 className="font-medium text-gray-900 mb-1">
+        {grupo ? `Sumarme al grupo de ${grupo.liderNombre}` : "Postularme a esta carga"}
+      </h2>
       <p className="text-sm mb-4" style={{ color: "#6B7280" }}>
-        {chatPrevio
+        {grupo
+          ? "Te sumás a su postulación: quien publica los acepta juntos y coordinan en el chat del grupo. Pagás tu propia comisión."
+          : chatPrevio
           ? "Al postularte se abre un chat con el cliente para consultar lo que necesites."
           : "Si el cliente te elige, se habilitan el chat y sus datos de contacto."}
       </p>
@@ -136,7 +144,7 @@ export default function PostularseButton({ cargaId, miPostulacion, contactoDefec
           <div>
             <label className={labelClass} style={labelStyle}>
               ¿Cuántos vehículos podés cubrir? *{" "}
-              <span className="text-xs" style={{ color: "#6B7280" }}>(máx. {cantidadCamiones})</span>
+              <span className="text-xs" style={{ color: "#6B7280" }}>(faltan {cantidadCamiones})</span>
             </label>
             <input
               type="number"

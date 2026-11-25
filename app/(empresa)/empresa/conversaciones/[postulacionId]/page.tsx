@@ -7,6 +7,7 @@ import { HamburgerMenu } from "@/app/_components/HamburgerMenu";
 import ChatThread from "@/app/_components/ChatThread";
 import { findPostulacionParaChat, findMensajesDeHilo } from "@/lib/repositories/mensaje.repository";
 import { labelChatPorVencer } from "@/lib/chat";
+import { participantesDelHilo } from "@/lib/services/mensaje.service";
 
 export default async function EmpresaConversacionPage({
   params,
@@ -26,6 +27,8 @@ export default async function EmpresaConversacionPage({
   const { carga } = postulacion;
   const mensajes = await findMensajesDeHilo(postulacionId);
   const avisoVencimiento = labelChatPorVencer(carga);
+  const participantes = participantesDelHilo(postulacion);
+  const nombres = Object.fromEntries(participantes.map((p) => [p.id, p.nombre]));
 
   return (
     <div className="h-dvh flex flex-col overflow-hidden" style={{ backgroundColor: "#F2F5F5" }}>
@@ -54,7 +57,11 @@ export default async function EmpresaConversacionPage({
           </svg>
         </Link>
         <div className="min-w-0 flex-1">
-          <p className="font-semibold text-gray-900 truncate">{postulacion.transportista.name}</p>
+          <p className="font-semibold text-gray-900 truncate">
+            {postulacion.miembros.length > 0
+              ? `Grupo de ${postulacion.transportista.name} (${postulacion.miembros.length + 1})`
+              : postulacion.transportista.name}
+          </p>
           <Link
             href={`/empresa/cargas/${carga.id}`}
             className="text-xs truncate block transition-opacity hover:opacity-80"
@@ -81,6 +88,7 @@ export default async function EmpresaConversacionPage({
         key={postulacion.id}
         postulacionId={postulacion.id}
         currentUserId={session.userId}
+        nombres={nombres}
         initialMensajes={mensajes.map((m) => ({
           id: m.id,
           autorId: m.autorId,
