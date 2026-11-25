@@ -8,10 +8,11 @@ import {
   crearCuentaDesdeSolicitud,
   descartarSolicitud,
   linkAccesoPorTelefono,
+  solicitudPendientePorTelefono,
 } from "@/lib/services/solicitud-transportista.service";
 
 export type LinkState =
-  | { ok: true; url: string; whatsappUrl: string; emailEnviado?: boolean }
+  | { ok: true; url: string; whatsappUrl: string; emailEnviado?: boolean; cuentaCreada?: boolean }
   | { ok: false; error: string }
   | undefined;
 
@@ -29,7 +30,10 @@ export async function crearCuentaAction(_prev: LinkState, form: FormData): Promi
   await soloAdmin();
   const id = String(form.get("id") ?? "");
   const email = String(form.get("email") ?? "").trim() || null;
+  return crearCuenta(id, email);
+}
 
+async function crearCuenta(id: string, email: string | null): Promise<LinkState> {
   const resultado = await crearCuentaDesdeSolicitud(id, email, baseUrl());
   if (!resultado.ok) return resultado;
 
@@ -45,13 +49,23 @@ export async function crearCuentaAction(_prev: LinkState, form: FormData): Promi
     url: resultado.activacionUrl,
     whatsappUrl: wa(resultado.telefono, mensaje),
     emailEnviado: resultado.emailEnviado,
+    cuentaCreada: true,
   };
 }
 
 export async function linkAccesoAction(_prev: LinkState, form: FormData): Promise<LinkState> {
   await soloAdmin();
-  const resultado = await linkAccesoPorTelefono(String(form.get("telefono") ?? ""), baseUrl());
-  if (!resultado.ok) return resultado;
+  const telefonoIngresado = String(form.get("telefono") ?? "");
+  const resultado = await linkAccesoPorTelefono(telefonoIngresado, baseUrl());
+  if (!resultado.ok) {
+    // Sin cuenta pero con una solicitud de "Quiero sumarme" pendiente: el
+    // mismo campo sirve para crearle la cuenta, como el botón de la lista.
+    const solicitud = await solicitudPendientePorTelefono(telefonoIngresado);
+    if (solicitud) return crearCuenta(solicitud.id, null);
+    return resultado.error === "No hay ninguna cuenta con ese teléfono"
+      ? { ok: false, error: "No hay ninguna cuenta ni solicitud pendiente con ese teléfono" }
+      : resultado;
+  }
   const mensaje =
     `¡Hola ${primerNombre(resultado.nombre)}! Este es tu link para elegir una contraseña nueva en ClickCargo:\n` +
     `${resultado.url}\n\nVence en 7 días.`;

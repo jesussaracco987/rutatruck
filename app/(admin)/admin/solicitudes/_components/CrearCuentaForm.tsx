@@ -89,7 +89,16 @@ export function LinkAccesoForm() {
           {pending ? "Generando…" : "Generar link"}
         </button>
       </form>
-      {state?.ok && <LinkListo state={state} titulo="Link generado (vence en 7 días)." />}
+      {state?.ok && (
+        <LinkListo
+          state={state}
+          titulo={
+            state.cuentaCreada
+              ? "Tenía una solicitud pendiente: cuenta creada, entra con su teléfono."
+              : "Link generado (vence en 7 días)."
+          }
+        />
+      )}
       {state && !state.ok && <p className="text-sm text-red-300">{state.error}</p>}
     </div>
   );

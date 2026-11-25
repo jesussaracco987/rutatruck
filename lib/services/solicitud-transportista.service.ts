@@ -192,6 +192,22 @@ export async function linkAccesoPorTelefono(
   return { ok: true, url: await generarLinkAcceso(user.id, baseUrl, false), nombre: user.name, telefono };
 }
 
+/**
+ * La solicitud pendiente más reciente con ese teléfono. `telefono` se guarda
+ * como lo escribió la persona, así que se prefiltra por los últimos 4 dígitos
+ * y se comparan las versiones normalizadas.
+ */
+export async function solicitudPendientePorTelefono(telefonoIngresado: string) {
+  const telefono = normalizarTelefono(telefonoIngresado);
+  if (!telefono) return null;
+  const candidatas = await db.solicitudTransportista.findMany({
+    where: { estado: "PENDIENTE", telefono: { contains: telefono.slice(-4) } },
+    orderBy: { creadaEn: "desc" },
+    select: { id: true, telefono: true },
+  });
+  return candidatas.find((s) => normalizarTelefono(s.telefono) === telefono) ?? null;
+}
+
 export async function descartarSolicitud(solicitudId: string) {
   await db.solicitudTransportista.updateMany({
     where: { id: solicitudId, estado: "PENDIENTE" },

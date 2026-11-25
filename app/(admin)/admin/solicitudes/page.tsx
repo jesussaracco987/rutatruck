@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
+import { verifySession } from "@/lib/dal";
 import { telefonoWhatsapp } from "@/lib/services/solicitud-transportista.service";
 import CrearCuentaForm, { LinkAccesoForm } from "./_components/CrearCuentaForm";
 
@@ -9,6 +10,17 @@ const ESTADO: Record<string, { label: string; color: string }> = {
 };
 
 export default async function SolicitudesPage() {
+  // Además de restringir el acceso, leer la sesión hace la página dinámica:
+  // sin eso Next la prerenderizaba en el build y la lista quedaba congelada.
+  const session = await verifySession();
+  if (session.role !== "ADMIN") {
+    return (
+      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+        <p className="text-gray-500">Acceso denegado</p>
+      </div>
+    );
+  }
+
   const [pendientes, atendidas] = await Promise.all([
     db.solicitudTransportista.findMany({ where: { estado: "PENDIENTE" }, orderBy: { creadaEn: "asc" } }),
     db.solicitudTransportista.findMany({
@@ -35,10 +47,10 @@ export default async function SolicitudesPage() {
         </div>
 
         <section className="rounded-xl border p-4 space-y-2" style={tarjeta}>
-          <h2 className="font-semibold text-white">Cambio de contraseña por WhatsApp</h2>
+          <h2 className="font-semibold text-white">Buscar por teléfono</h2>
           <p className="text-sm" style={{ color: "#A8C5C5" }}>
-            Para cualquier cuenta que pidió el link por WhatsApp. Poné el teléfono desde el que escribió: se busca en
-            el teléfono de ingreso y en el de contacto del perfil.
+            Poné el teléfono desde el que escribió por WhatsApp. Si ya tiene cuenta, genera el link para cambiar la
+            contraseña. Si no, pero dejó una solicitud en &quot;Quiero sumarme&quot;, le crea la cuenta.
           </p>
           <LinkAccesoForm />
         </section>
