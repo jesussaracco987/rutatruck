@@ -34,6 +34,15 @@ export default async function SolicitudesPage() {
           </p>
         </div>
 
+        <section className="rounded-xl border p-4 space-y-2" style={tarjeta}>
+          <h2 className="font-semibold text-white">Cambio de contraseña por WhatsApp</h2>
+          <p className="text-sm" style={{ color: "#A8C5C5" }}>
+            Para cualquier cuenta que pidió el link por WhatsApp. Poné el teléfono desde el que escribió: se busca en
+            el teléfono de ingreso y en el de contacto del perfil.
+          </p>
+          <LinkAccesoForm />
+        </section>
+
         <section className="space-y-3">
           <h2 className="font-semibold text-white">Pendientes ({pendientes.length})</h2>
           {pendientes.length === 0 && (
@@ -67,14 +76,6 @@ export default async function SolicitudesPage() {
               <CrearCuentaForm id={s.id} email={s.email} />
             </div>
           ))}
-        </section>
-
-        <section className="rounded-xl border p-4 space-y-2" style={tarjeta}>
-          <h2 className="font-semibold text-white">Link de acceso por teléfono</h2>
-          <p className="text-sm" style={{ color: "#A8C5C5" }}>
-            Para quien entra con su teléfono y no recuerda la contraseña: no tiene email al que mandarle el link.
-          </p>
-          <LinkAccesoForm />
         </section>
 
         {atendidas.length > 0 && (

@@ -162,6 +162,11 @@ export async function crearCuentaDesdeSolicitud(
 /**
  * Link de acceso para quien entra con el teléfono y olvidó la contraseña: no
  * hay email al que mandárselo, así que lo pide por WhatsApp y el admin lo genera.
+ *
+ * Busca igual que el login (app/actions/auth.ts): primero `telefonoLogin`, y si
+ * no hay, el `phone` del perfil normalizado. Las cuentas registradas con email
+ * también pueden entrar con el teléfono que cargaron, así que también piden el
+ * link por acá. Si ese teléfono está en varias cuentas no se elige ninguna.
  */
 export async function linkAccesoPorTelefono(
   telefonoIngresado: string,
@@ -169,8 +174,21 @@ export async function linkAccesoPorTelefono(
 ): Promise<{ ok: true; url: string; nombre: string; telefono: string } | { ok: false; error: string }> {
   const telefono = normalizarTelefono(telefonoIngresado);
   if (!telefono) return { ok: false, error: "Teléfono no válido" };
-  const user = await db.user.findUnique({ where: { telefonoLogin: telefono }, select: { id: true, name: true } });
-  if (!user) return { ok: false, error: "No hay ninguna cuenta que entre con ese teléfono" };
+
+  let user = await db.user.findUnique({ where: { telefonoLogin: telefono }, select: { id: true, name: true } });
+  if (!user) {
+    const candidatos = await db.user.findMany({
+      where: { phone: { contains: telefono.slice(-4) } },
+      select: { id: true, name: true, email: true, phone: true },
+    });
+    const coincidentes = candidatos.filter((u) => u.phone && normalizarTelefono(u.phone) === telefono);
+    if (coincidentes.length > 1) {
+      const cuentas = coincidentes.map((u) => u.email ?? u.name).join(", ");
+      return { ok: false, error: `Ese teléfono está en varias cuentas (${cuentas}). Que use "Olvidé mi contraseña" con su email.` };
+    }
+    user = coincidentes[0] ?? null;
+  }
+  if (!user) return { ok: false, error: "No hay ninguna cuenta con ese teléfono" };
   return { ok: true, url: await generarLinkAcceso(user.id, baseUrl, false), nombre: user.name, telefono };
 }
 

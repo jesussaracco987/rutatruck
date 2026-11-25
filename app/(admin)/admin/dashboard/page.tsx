@@ -127,7 +127,7 @@ export default async function AdminDashboard() {
             Solicitudes de transportistas{solicitudesPendientes > 0 ? ` (${solicitudesPendientes} pendientes)` : ""} →
           </h3>
           <p className="text-sm" style={{ color: "#A8C5C5" }}>
-            Pidieron que les creemos la cuenta desde &quot;Quiero sumarme&quot;.
+            Cuentas pedidas desde &quot;Quiero sumarme&quot; y links de cambio de contraseña pedidos por WhatsApp.
           </p>
         </a>
 
