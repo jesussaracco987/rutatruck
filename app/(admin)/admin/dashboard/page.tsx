@@ -132,6 +132,17 @@ export default async function AdminDashboard() {
         </a>
 
         <a
+          href="/admin/cuentas"
+          className="block rounded-xl border p-6 transition-opacity hover:opacity-80"
+          style={{ backgroundColor: "#112424", borderColor: "var(--primary-20)" }}
+        >
+          <h3 className="font-semibold text-white mb-1">Crear cuenta →</h3>
+          <p className="text-sm" style={{ color: "#A8C5C5" }}>
+            Dar de alta a un cliente de cualquier rol, sin que pase por el registro.
+          </p>
+        </a>
+
+        <a
           href="/admin/metricas"
           className="block rounded-xl border p-6 transition-opacity hover:opacity-80"
           style={{ backgroundColor: "#112424", borderColor: "var(--primary-20)" }}
